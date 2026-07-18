@@ -1,0 +1,22 @@
+{
+  "name": "@ui/seo-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@lib/api-client": "workspace:*",
+    "@markdoc/markdoc": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@template-nextjs/db": "workspace:*",
+    "@ui/base": "workspace:*",
+    "isomorphic-dompurify": "catalog:",
+    "lucide-react": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
