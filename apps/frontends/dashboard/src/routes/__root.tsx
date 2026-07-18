@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider, useSidebar } from "@ui/base/ui/sidebar"
 import { AppSidebar } from "@frontends/dashboard/components/AppSidebar"
 import { ChatDock } from "@frontends/dashboard/components/chat/ChatDock"
 import { ChatDockProvider } from "@frontends/dashboard/components/chat/ChatDockContext"
+import { ChatSocketProvider } from "@frontends/dashboard/components/chat/ChatSocket"
 import { TopNav } from "@frontends/dashboard/components/TopNav"
 import { getApiV1AuthMeOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
 import { PanelLeft } from "lucide-react"
@@ -110,18 +111,20 @@ function RootLayout() {
   }
 
   return (
-    <ChatDockProvider>
-      <SidebarProvider className="flex min-h-screen w-full flex-col">
-        <TopNav />
-        <div className="flex min-h-0 w-full flex-1">
-          <AppSidebar />
-          <SidebarInset className="min-w-0">
-            <SidebarCollapseButton />
-            <Outlet />
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-      <ChatDock />
-    </ChatDockProvider>
+    <ChatSocketProvider>
+      <ChatDockProvider>
+        <SidebarProvider className="flex min-h-screen w-full flex-col">
+          <TopNav />
+          <div className="flex min-h-0 w-full flex-1">
+            <AppSidebar />
+            <SidebarInset className="min-w-0">
+              <SidebarCollapseButton />
+              <Outlet />
+            </SidebarInset>
+          </div>
+        </SidebarProvider>
+        <ChatDock />
+      </ChatDockProvider>
+    </ChatSocketProvider>
   )
 }

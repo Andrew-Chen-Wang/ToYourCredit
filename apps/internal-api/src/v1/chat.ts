@@ -13,8 +13,10 @@ import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
 import { authMiddleware } from "../middleware"
+import { type ChatEventType, publishChatEvent } from "../realtime"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
+import { nodeWebSocket, registerSocket, unregisterSocket } from "../ws"
 import {
   chatConversationCreatedSchemaResponse,
   chatConversationIdSchemaParam,
@@ -115,8 +117,41 @@ async function serializeConversations(
   })
 }
 
+/** Publish a realtime event to every participant of a conversation. Callers that
+ *  need to reach a participant being removed must pass userIds captured first. */
+async function broadcast(
+  type: ChatEventType,
+  conversationId: string,
+  data?: unknown,
+  userIds?: string[],
+) {
+  const targets =
+    userIds ??
+    (await fetchChatParticipant(db).listForConversation(conversationId)).map((p) => p.userId)
+  publishChatEvent({ type, conversationId, userIds: targets, data })
+}
+
 const app = new Hono()
   .use(authMiddleware)
+  .get(
+    "/ws",
+    nodeWebSocket.upgradeWebSocket((c) => {
+      // authMiddleware has already run on this sub-app, so the session cookie
+      // was validated during the upgrade request.
+      const user = c.var.user as { id: string }
+      return {
+        onOpen: (_evt, ws) => {
+          registerSocket(user.id, ws)
+        },
+        onClose: (_evt, ws) => {
+          unregisterSocket(user.id, ws)
+        },
+        onError: (_evt, ws) => {
+          unregisterSocket(user.id, ws)
+        },
+      }
+    }),
+  )
   .get(
     "/",
     describeRoute({
@@ -192,8 +227,13 @@ const app = new Hono()
       const now = new Date()
       const existing = await fetchChatConversation(db).findExistingDm(user.id, recipient.id)
       if (existing) {
-        await crudChatMessage(db).create({ conversationId: existing, senderUserId: user.id, body })
+        const message = await crudChatMessage(db).create({
+          conversationId: existing,
+          senderUserId: user.id,
+          body,
+        })
         await crudChatConversation(db).touch(existing, now)
+        await broadcast("message:new", existing, toItem({ ...message, deletedAt: null }))
         return c.json({ conversationId: existing }, 201)
       }
 
@@ -232,6 +272,7 @@ const app = new Hono()
         actorUserId: user.id,
         conversationId: conversation.id,
       })
+      await broadcast("conversation:updated", conversation.id, undefined, [user.id, recipient.id])
       return c.json({ conversationId: conversation.id }, 201)
     },
   )
@@ -292,6 +333,7 @@ const app = new Hono()
         senderUserId: user.id,
         body,
       })
+      await broadcast("conversation:updated", conversation.id, undefined, [user.id, ...inviteeIds])
       return c.json({ conversationId: conversation.id }, 201)
     },
   )
@@ -389,6 +431,7 @@ const app = new Hono()
         body,
       })
       await crudChatConversation(db).touch(conversationId, now)
+      await broadcast("message:new", conversationId, toItem({ ...message, deletedAt: null }))
       return c.json(
         {
           id: message.id,
@@ -424,6 +467,8 @@ const app = new Hono()
       const participant = await fetchChatParticipant(db).getOne(conversationId, user.id, ["id"])
       if (!participant) return throwForbidden(c, "You are not a participant in this conversation")
       await crudChatParticipant(db).markRead(conversationId, user.id, new Date())
+      // Only the reader's other devices/tabs need to refresh unread state.
+      await broadcast("conversation:updated", conversationId, undefined, [user.id])
       return c.json({})
     },
   )
@@ -450,6 +495,7 @@ const app = new Hono()
       if (!participant) return throwForbidden(c, "You are not a participant in this conversation")
       await crudChatParticipant(db).setStatus(conversationId, user.id, "accepted")
       await crudChatParticipant(db).setHidden(conversationId, user.id, null)
+      await broadcast("conversation:updated", conversationId)
       return c.json({})
     },
   )
@@ -476,6 +522,7 @@ const app = new Hono()
       if (!participant) return throwForbidden(c, "You are not a participant in this conversation")
       await crudChatParticipant(db).setStatus(conversationId, user.id, "ignored")
       await crudChatParticipant(db).setHidden(conversationId, user.id, new Date())
+      await broadcast("conversation:updated", conversationId, undefined, [user.id])
       return c.json({})
     },
   )
@@ -500,7 +547,12 @@ const app = new Hono()
       const { conversationId } = c.req.valid("param")
       const participant = await fetchChatParticipant(db).getOne(conversationId, user.id, ["id"])
       if (!participant) return throwForbidden(c, "You are not a participant in this conversation")
+      // Capture before removal so the leaver also gets the event.
+      const members = (await fetchChatParticipant(db).listForConversation(conversationId)).map(
+        (p) => p.userId,
+      )
       await crudChatParticipant(db).remove(conversationId, user.id)
+      await broadcast("conversation:updated", conversationId, undefined, members)
       return c.json({})
     },
   )
@@ -526,6 +578,7 @@ const app = new Hono()
       const participant = await fetchChatParticipant(db).getOne(conversationId, user.id, ["id"])
       if (!participant) return throwForbidden(c, "You are not a participant in this conversation")
       await crudChatParticipant(db).setHidden(conversationId, user.id, new Date())
+      await broadcast("conversation:updated", conversationId, undefined, [user.id])
       return c.json({})
     },
   )
@@ -562,6 +615,7 @@ const app = new Hono()
         return throwForbidden(c, "Only the host can rename this conversation")
       }
       await crudChatConversation(db).update(conversationId, { name })
+      await broadcast("conversation:updated", conversationId)
       return c.json({})
     },
   )
@@ -589,7 +643,12 @@ const app = new Hono()
       if (!host || host.role !== "host") {
         return throwForbidden(c, "Only the host can remove participants")
       }
+      // Capture before removal so the removed member also gets the event.
+      const members = (await fetchChatParticipant(db).listForConversation(conversationId)).map(
+        (p) => p.userId,
+      )
       await crudChatParticipant(db).remove(conversationId, userId)
+      await broadcast("conversation:updated", conversationId, undefined, members)
       return c.json({})
     },
   )
@@ -616,10 +675,14 @@ const app = new Hono()
     async (c) => {
       const user = c.var.user
       const { messageId } = c.req.valid("param")
-      const message = await fetchChatMessage(db).getOne(messageId, ["senderUserId"])
+      const message = await fetchChatMessage(db).getOne(messageId, [
+        "senderUserId",
+        "conversationId",
+      ])
       if (!message) return throwNotFound(c, "Message not found")
       if (message.senderUserId !== user.id) return throwForbidden(c, "Not your message")
       await crudChatMessage(db).softDelete(messageId, new Date())
+      await broadcast("message:deleted", message.conversationId, { messageId })
       return c.json({})
     },
   )

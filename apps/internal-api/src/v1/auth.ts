@@ -65,7 +65,15 @@ const app = new Hono()
     async (c) => {
       const session = c.var.session
       await db.deleteFrom("session").where("sessionKey", "=", session.sessionKey).execute()
-      deleteCookie(c, "session", { path: "/" })
+      deleteCookie(c, "session", {
+        path: "/",
+        // Must match the domain the website sets in prod (`.toyourcredit.forum`)
+        // or the browser keeps the cookie.
+        domain:
+          process.env.NODE_ENV === "development"
+            ? undefined
+            : `.${process.env.NEXT_PUBLIC_HOSTNAME}`,
+      })
       return c.json({}, 200)
     },
   )

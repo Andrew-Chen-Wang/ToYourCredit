@@ -49,6 +49,7 @@ export interface ProcessedPostFlair {
 export interface ProcessedPostMedia {
   mediaType: string
   url: string
+  hlsUrl: string | null
   width: number | null
   height: number | null
 }
@@ -134,6 +135,8 @@ export async function processPosts(
       "postId",
       "mediaType",
       "s3Key",
+      "hlsMasterKey",
+      "hlsStatus",
       "width",
       "height",
     ]),
@@ -154,6 +157,7 @@ export async function processPosts(
     list.push({
       mediaType: m.mediaType,
       url: mediaPublicUrl(m.s3Key),
+      hlsUrl: m.hlsStatus === "ready" && m.hlsMasterKey ? mediaPublicUrl(m.hlsMasterKey) : null,
       width: m.width,
       height: m.height,
     })

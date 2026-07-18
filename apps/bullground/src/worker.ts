@@ -20,6 +20,7 @@ import { processMediaCleanup } from "./jobs/mediaCleanup"
 import { processRecurringPostScheduler } from "./jobs/recurringPostScheduler"
 import { processRisingRecompute } from "./jobs/risingRecompute"
 import { processScheduledPostPublish } from "./jobs/scheduledPostPublish"
+import { processVideoHlsEncode } from "./jobs/videoHlsEncode"
 import { ensureSearchIndexes } from "@template-nextjs/search"
 
 // This process runs the cloud workers (fast/medium/slow). Each worker dispatches on
@@ -82,6 +83,9 @@ function makeSlowWorker() {
       }
       if (job.name === "link-preview-fetch") {
         await processLinkPreviewFetch(job.data as JobPayloadMap["link-preview-fetch"])
+      }
+      if (job.name === "video-hls-encode") {
+        await processVideoHlsEncode(job.data as JobPayloadMap["video-hls-encode"])
       }
     },
     { connection, concurrency: 5, removeOnComplete: { age: 86400 } },

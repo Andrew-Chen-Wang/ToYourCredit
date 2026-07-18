@@ -2,14 +2,19 @@ import { crudPost } from "@lib/dao/post/crud"
 import { crudPostMedia } from "@lib/dao/postMedia/crud"
 import { fetchPostMedia } from "@lib/dao/postMedia/fetch"
 import { db } from "@template-nextjs/db"
-import type { JobPayloadMap } from "@utils/queues"
+import { enqueueVideoHlsEncode, type JobPayloadMap } from "@utils/queues"
 import { deleteFromS3, existsOnS3 } from "@utils/aws"
 import type { Job } from "bullmq"
 
 export async function processMediaCleanup(job: Job<JobPayloadMap["media-cleanup"]>): Promise<void> {
   const { postId } = job.data
 
-  const media = await fetchPostMedia(db).getManyByPost(postId, ["s3Key", "uploadStatus"])
+  const media = await fetchPostMedia(db).getManyByPost(postId, [
+    "id",
+    "s3Key",
+    "uploadStatus",
+    "mimeType",
+  ])
   if (media.length === 0) return
 
   const pending = media.filter((m) => m.uploadStatus === "pending")
@@ -22,14 +27,21 @@ export async function processMediaCleanup(job: Job<JobPayloadMap["media-cleanup"
 
   if (wasPromoted) {
     const checks = await Promise.all(
-      pending.map(async (m) => ({ key: m.s3Key, exists: await existsOnS3(m.s3Key) })),
+      pending.map(async (m) => ({ media: m, exists: await existsOnS3(m.s3Key) })),
     )
-    const surviving = checks.filter((c) => c.exists).map((c) => c.key)
+    const surviving = checks.filter((c) => c.exists).map((c) => c.media)
     if (surviving.length > 0) {
       await crudPostMedia(db).markCompleted(
         postId,
-        surviving.map((key) => ({ s3Key: key })),
+        surviving.map((m) => ({ s3Key: m.s3Key })),
       )
+      // Videos get an HLS ladder encoded in the background once the raw upload is
+      // confirmed. This is the only place video rows transition to "completed".
+      for (const m of surviving) {
+        if (!m.mimeType?.startsWith("video/")) continue
+        await crudPostMedia(db).updateHls(m.id, { hlsStatus: "pending" })
+        await enqueueVideoHlsEncode(m.id)
+      }
     }
     await crudPostMedia(db).deletePendingByPost(postId)
     return

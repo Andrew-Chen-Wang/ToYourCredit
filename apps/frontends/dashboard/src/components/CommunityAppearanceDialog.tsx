@@ -69,7 +69,7 @@ export function CommunityAppearanceDialog({
         target === "icon"
           ? await postApiV1MediaCommunityIconUpload({ body, throwOnError: true })
           : await postApiV1MediaCommunityBannerUpload({ body, throwOnError: true })
-      await uploadToPresigned({ url: data.url, fields: data.fields }, blob)
+      await uploadToPresigned({ url: data.url }, blob)
       if (target === "icon") {
         await postApiV1MediaCommunityIconConfirm({
           body: { communityId, key: data.key },

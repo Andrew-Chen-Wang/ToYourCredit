@@ -251,7 +251,7 @@ function ProfileTab() {
         cropTarget === "avatar"
           ? await postApiV1MediaAvatarUpload({ body, throwOnError: true })
           : await postApiV1MediaBannerUpload({ body, throwOnError: true })
-      await uploadToPresigned({ url: data.url, fields: data.fields }, blob)
+      await uploadToPresigned({ url: data.url }, blob)
       if (cropTarget === "avatar") {
         await postApiV1MediaAvatarConfirm({ body: { key: data.key }, throwOnError: true })
       } else {

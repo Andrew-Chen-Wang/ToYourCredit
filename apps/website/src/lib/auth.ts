@@ -42,9 +42,16 @@ export async function invalidateSession(sessionId: string): Promise<void> {
   await db.deleteFrom("session").where("sessionKey", "=", sessionId).execute()
 }
 
+/** Cookie domain scoped to the apex in prod so the session also reaches the
+ *  standalone API at api.<hostname>. */
+function sessionCookieDomain(): string | undefined {
+  return process.env.NODE_ENV === "development" ? undefined : `.${process.env.NEXT_PUBLIC_HOSTNAME}`
+}
+
 export async function setSessionTokenCookie(token: string, expiresAt: Date): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.set("session", token, {
+    domain: sessionCookieDomain(),
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -56,6 +63,7 @@ export async function setSessionTokenCookie(token: string, expiresAt: Date): Pro
 export async function deleteSessionTokenCookie(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.set("session", "", {
+    domain: sessionCookieDomain(),
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

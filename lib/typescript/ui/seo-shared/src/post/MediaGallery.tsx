@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import type Hls from "hls.js"
 import { ChevronLeft, ChevronRight, EyeOff } from "lucide-react"
 import { cn } from "@ui/base/lib/utils"
 import { Dialog, DialogContent } from "@ui/base/ui/dialog"
@@ -8,6 +9,7 @@ import { Dialog, DialogContent } from "@ui/base/ui/dialog"
 export type MediaGalleryItem = {
   mediaType: string
   url: string
+  hlsUrl?: string | null
   width: number | null
   height: number | null
 }
@@ -23,6 +25,75 @@ function isVideo(item: MediaGalleryItem): boolean {
   return item.mediaType === "video"
 }
 
+/**
+ * Plays a post video, preferring the HLS ladder when one has been encoded.
+ * Safari plays HLS natively; other browsers stream it through hls.js (loaded
+ * on demand). Falls back to the raw upload URL when no HLS rendition exists
+ * or hls.js is unsupported/fails.
+ */
+function HlsVideo({
+  src,
+  hlsUrl,
+  autoPlay,
+  className,
+}: {
+  src: string
+  hlsUrl?: string | null
+  autoPlay?: boolean
+  className?: string
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !hlsUrl) return
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = hlsUrl
+      return
+    }
+
+    let hls: Hls | null = null
+    let cancelled = false
+    void import("hls.js").then(({ default: HlsModule }) => {
+      if (cancelled) return
+      if (!HlsModule.isSupported()) {
+        video.src = src
+        return
+      }
+      hls = new HlsModule()
+      hls.on(HlsModule.Events.ERROR, (_event, data) => {
+        if (data.fatal) {
+          hls?.destroy()
+          hls = null
+          video.src = src
+        }
+      })
+      hls.loadSource(hlsUrl)
+      hls.attachMedia(video)
+    })
+
+    return () => {
+      cancelled = true
+      hls?.destroy()
+      hls = null
+    }
+  }, [hlsUrl, src])
+
+  return (
+    // oxlint-disable-next-line jsx-a11y/media-has-caption -- user-uploaded video without captions
+    <video
+      ref={videoRef}
+      src={hlsUrl ? undefined : src}
+      controls
+      autoPlay={autoPlay}
+      preload="metadata"
+      aria-label="Post video"
+      className={className}
+    />
+  )
+}
+
 function MediaItem({
   item,
   onOpenLightbox,
@@ -32,12 +103,9 @@ function MediaItem({
 }) {
   if (isVideo(item)) {
     return (
-      // oxlint-disable-next-line jsx-a11y/media-has-caption -- user-uploaded video without captions
-      <video
+      <HlsVideo
         src={item.url}
-        controls
-        preload="metadata"
-        aria-label="Post video"
+        hlsUrl={item.hlsUrl}
         className="max-h-[512px] w-full bg-black object-contain"
       />
     )
@@ -172,12 +240,10 @@ export function MediaGallery({ media, isNsfw, isSpoiler, className }: MediaGalle
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-[95vw] border-0 bg-transparent p-0 shadow-none sm:max-w-[90vw]">
           {isVideo(current) ? (
-            // oxlint-disable-next-line jsx-a11y/media-has-caption -- user-uploaded video without captions
-            <video
+            <HlsVideo
               src={current.url}
-              controls
+              hlsUrl={current.hlsUrl}
               autoPlay
-              aria-label="Post video"
               className="max-h-[90vh] w-full rounded-md bg-black object-contain"
             />
           ) : (

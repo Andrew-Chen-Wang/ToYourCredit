@@ -15,9 +15,13 @@
     }
   ],
   "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "generate-specs": "tsx src/index.ts --openapi > openapi.json"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.9",
+    "@hono/node-ws": "^1.3.1",
     "@lib/dao": "workspace:*",
     "@oslojs/crypto": "catalog:",
     "@oslojs/encoding": "catalog:",
@@ -29,7 +33,9 @@
     "@utils/queues": "workspace:*",
     "hono": "catalog:",
     "hono-typebox-openapi": "^0.2.0",
+    "ioredis": "^5.9.0",
     "kysely": "catalog:",
+    "tsx": "^4.22.3",
     "typebox": "catalog:",
     "uuid": "catalog:"
   },

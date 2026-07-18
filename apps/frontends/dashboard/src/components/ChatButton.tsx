@@ -2,21 +2,23 @@ import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
 import { useChatDock } from "@frontends/dashboard/components/chat/ChatDockContext"
+import { useChatSocket } from "@frontends/dashboard/components/chat/ChatSocket"
 import { getApiV1ChatUnreadCountOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
 import { MessageCircle } from "lucide-react"
 
 /**
- * TopNav entry point for chat. Polls the unread-conversation count every 15s
- * (paused while the tab is hidden) and renders a badge over the icon. Toggles
- * the floating chat dock when it's mounted; otherwise navigates to the full
- * `/chat` page.
+ * TopNav entry point for chat. The unread-conversation count updates via chat
+ * websocket invalidations; a slow 30s poll covers periods where the socket is
+ * down. Toggles the floating chat dock when it's mounted; otherwise navigates
+ * to the full `/chat` page.
  */
 export function ChatButton() {
   const dock = useChatDock()
   const navigate = useNavigate()
+  const { connected } = useChatSocket()
   const { data } = useQuery({
     ...getApiV1ChatUnreadCountOptions(),
-    refetchInterval: 15_000,
+    refetchInterval: connected ? false : 30_000,
     refetchIntervalInBackground: false,
   })
 

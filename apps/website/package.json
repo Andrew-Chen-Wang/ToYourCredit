@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@api/internal": "workspace:*",
     "@base-ui/react": "catalog:",
     "@lib/api-client": "workspace:*",
     "@oslojs/crypto": "catalog:",

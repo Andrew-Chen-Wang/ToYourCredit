@@ -9,6 +9,9 @@ dotenv.config({ path: `${currentDir}/../../../../../.env`, quiet: true })
 
 // forcePathStyle is required by Garage (the local/self-hosted S3 backend). `endpoint`
 // stays undefined against real AWS, where the SDK resolves the region's endpoint itself.
+// The WHEN_REQUIRED checksum settings stop the SDK from injecting default CRC32
+// checksums, which Cloudflare R2 and Garage reject (and which would bake an empty-body
+// checksum into presigned PUT URLs).
 export const s3Client = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
   region: process.env.S3_REGION ?? "us-east-1",
@@ -20,6 +23,8 @@ export const s3Client = new S3Client({
         }
       : undefined,
   forcePathStyle: true,
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 })
 
 export function getS3BucketName(): string {

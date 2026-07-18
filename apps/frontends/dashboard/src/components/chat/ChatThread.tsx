@@ -34,6 +34,7 @@ import {
 import { MoreHorizontal, Trash2, Users } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { toast } from "sonner"
+import { useChatSocket } from "@frontends/dashboard/components/chat/ChatSocket"
 import {
   conversationTitle,
   peerOf,
@@ -41,11 +42,11 @@ import {
   type Conversation,
 } from "@frontends/dashboard/components/chat/types"
 
-const POLL_MS = 5_000
-
-/** Loads messages for a conversation: initial page, 5s `after` polling, and
- * cursor-based backscroll. Polling pauses while the tab is hidden. */
+/** Loads messages for a conversation: initial page, realtime websocket updates,
+ * and cursor-based backscroll. After a socket reconnect it re-syncs anything
+ * missed via one `?after` fetch. */
 function useChatMessages(conversationId: string) {
+  const { subscribe } = useChatSocket()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [olderCursor, setOlderCursor] = useState<string | null>(null)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -89,8 +90,8 @@ function useChatMessages(conversationId: string) {
   }, [conversationId])
 
   useEffect(() => {
-    const poll = () => {
-      if (document.hidden) return
+    // One-shot catch-up fetch, used after socket reconnects.
+    const syncNewer = () => {
       const current = messagesRef.current.filter((m) => !m.id.startsWith("optimistic-"))
       const lastId = current.at(-1)?.id
       if (!lastId) return
@@ -103,15 +104,28 @@ function useChatMessages(conversationId: string) {
           })
           mergeNewer(data.data)
         } catch {
-          // transient poll failure; next tick retries
+          // transient failure; the next event or reconnect re-syncs
         }
       })()
     }
-    const id = setInterval(poll, POLL_MS)
-    return () => {
-      clearInterval(id)
-    }
-  }, [conversationId, mergeNewer])
+
+    return subscribe((event) => {
+      if (event.type === "socket:reconnected") {
+        syncNewer()
+        return
+      }
+      if (event.type === "message:new" && event.conversationId === conversationId) {
+        mergeNewer([{ ...event.data, createdAt: new Date(event.data.createdAt) }])
+        return
+      }
+      if (event.type === "message:deleted" && event.conversationId === conversationId) {
+        const { messageId } = event.data
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, body: null, isDeleted: true } : m)),
+        )
+      }
+    })
+  }, [conversationId, mergeNewer, subscribe])
 
   const loadOlder = useCallback(async () => {
     if (!olderCursor) return

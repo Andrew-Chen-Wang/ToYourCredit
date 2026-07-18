@@ -3,7 +3,7 @@ import { fetchPost } from "@lib/dao/post/fetch"
 import { crudPostMedia } from "@lib/dao/postMedia/crud"
 import { fetchPostMedia } from "@lib/dao/postMedia/fetch"
 import { db } from "@template-nextjs/db"
-import { createMediaUploadPost, deleteFromS3, existsOnS3 } from "@utils/aws"
+import { createMediaUploadPut, deleteFromS3, existsOnS3 } from "@utils/aws"
 import { v7 } from "uuid"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -107,19 +107,13 @@ describe.skipIf(process.env.CI === "true")("postMedia DAO lifecycle and feed gua
 
   it("presigns, uploads to Garage, verifies via HeadObject, and deletes", async () => {
     const key = `post-media/${mediaPostId}/probe-${v7()}.png`
-    const presigned = await createMediaUploadPost({
-      key,
-      contentType: "image/png",
-      maxSizeBytes: 20 * 1024 * 1024,
+    const presigned = await createMediaUploadPut({ key, contentType: "image/png" })
+
+    const res = await fetch(presigned.url, {
+      method: "PUT",
+      headers: { "Content-Type": "image/png" },
+      body: PNG_1PX,
     })
-
-    const form = new FormData()
-    for (const [field, value] of Object.entries(presigned.fields)) {
-      form.append(field, value)
-    }
-    form.append("file", new Blob([PNG_1PX], { type: "image/png" }), "probe.png")
-
-    const res = await fetch(presigned.url, { method: "POST", body: form })
     expect(res.status).toBeLessThan(300)
 
     expect(await existsOnS3(key)).toBe(true)

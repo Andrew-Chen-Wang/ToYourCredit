@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Idempotent Garage (local S3) initialization for ReadIt dev.
-# Requires the reddit_clone_garage container to be running (docker-compose up -d).
+# Requires the toyourcredit_garage container to be running (docker-compose up -d).
 # Creates the cluster layout, imports the fixed dev key from .env, and creates the media bucket.
 set -euo pipefail
 
-CONTAINER=reddit_clone_garage
+CONTAINER=toyourcredit_garage
 BUCKET=readit-media
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

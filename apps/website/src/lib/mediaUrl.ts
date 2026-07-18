@@ -5,7 +5,7 @@ import { buildMediaUrl } from "@ui/seo-shared/media/mediaUrl"
  * at request time (SSR only); defaults to the local Garage/S3 endpoint.
  */
 const MEDIA_BASE_URL =
-  process.env.PUBLIC_MEDIA_BASE_URL ?? "http://readit-media.web.garage.localhost:21693"
+  process.env.PUBLIC_MEDIA_BASE_URL ?? "http://readit-media.web.garage.localhost:58614"
 
 /** Server-bound convenience wrapper around {@link buildMediaUrl}. */
 export function mediaUrl(key: string | null | undefined): string | null {

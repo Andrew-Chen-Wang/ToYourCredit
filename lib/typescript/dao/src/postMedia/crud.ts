@@ -63,6 +63,13 @@ export function crudPostMedia(db: Kysely<DB>) {
     })
   }
 
+  async function updateHls(
+    id: string,
+    set: { hlsStatus: string | null; hlsMasterKey?: string | null },
+  ): Promise<void> {
+    await db.updateTable("postMedia").set(set).where("id", "=", id).execute()
+  }
+
   async function deletePendingByPost(postId: string): Promise<number> {
     const result = await db
       .deleteFrom("postMedia")
@@ -77,5 +84,5 @@ export function crudPostMedia(db: Kysely<DB>) {
     return Number(result.numDeletedRows ?? 0n)
   }
 
-  return { createMany, markCompleted, deletePendingByPost, deleteByPost }
+  return { createMany, markCompleted, updateHls, deletePendingByPost, deleteByPost }
 }
