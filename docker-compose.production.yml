@@ -25,7 +25,9 @@
 services:
   traefik:
     container_name: toyourcredit_traefik
-    image: traefik:v3.3
+    # v3.6+ required: older Traefik Docker clients speak API <1.40, which
+    # current Docker Engine rejects.
+    image: traefik:v3.6
     restart: unless-stopped
     command:
       - --providers.docker=true
