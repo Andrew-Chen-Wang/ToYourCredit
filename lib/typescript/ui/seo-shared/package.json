@@ -12,6 +12,7 @@
     "@tanstack/react-query": "catalog:",
     "@template-nextjs/db": "workspace:*",
     "@ui/base": "workspace:*",
+    "hls.js": "^1.6.0",
     "isomorphic-dompurify": "catalog:",
     "lucide-react": "catalog:"
   },

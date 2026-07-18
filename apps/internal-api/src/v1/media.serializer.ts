@@ -49,6 +49,5 @@ export const mediaCommunityConfirmSchemaRequest = Type.Object({
 export const mediaUploadSchemaResponse = Type.Object({
   key: Type.String(),
   url: Type.String(),
-  fields: Type.Record(Type.String(), Type.String()),
   publicUrl: Type.String(),
 })

@@ -1,0 +1,23 @@
+# Keep the Docker build context small. Builds run from the repo root:
+#   docker build -f apps/<app>/Dockerfile .
+node_modules
+**/node_modules
+.git
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+apps/website
+apps/frontends
+tofu
+.env*
+letsencrypt
+*.log
+.DS_Store
+Dockerfile
+**/Dockerfile
+docker-compose*.yml
+docker-compose*.yaml
+.github

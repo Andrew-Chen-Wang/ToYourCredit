@@ -21,7 +21,9 @@ export function ModInviteList() {
   const queryClient = useQueryClient()
   const { data } = useQuery({
     ...getApiV1ModTeamMyInvitesOptions(),
-    refetchInterval: 15_000,
+    // Mod invites aren't chat data, so they have no websocket event; keep a
+    // slow poll instead of the old 15s one.
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
   })
 

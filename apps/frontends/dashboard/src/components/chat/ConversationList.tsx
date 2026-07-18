@@ -175,11 +175,7 @@ export function ConversationList({
   showHeader?: boolean
   showModInvites?: boolean
 }) {
-  const { data, isLoading } = useQuery({
-    ...getApiV1ChatOptions({ query: { filter } }),
-    refetchInterval: 15_000,
-    refetchIntervalInBackground: false,
-  })
+  const { data, isLoading } = useQuery(getApiV1ChatOptions({ query: { filter } }))
 
   const conversations = data?.data ?? []
   const isRequests = filter === "requests"

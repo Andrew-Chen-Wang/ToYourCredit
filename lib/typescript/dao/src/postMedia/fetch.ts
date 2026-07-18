@@ -2,6 +2,13 @@ import type { DB } from "@template-nextjs/db"
 import type { Kysely, Selectable } from "kysely"
 
 export function fetchPostMedia(db: Kysely<DB>) {
+  async function getOne<T extends (keyof DB["postMedia"])[]>(
+    id: string,
+    fields: T,
+  ): Promise<Pick<Selectable<DB["postMedia"]>, T[number]> | undefined> {
+    return await db.selectFrom("postMedia").select(fields).where("id", "=", id).executeTakeFirst()
+  }
+
   async function getManyByPost<T extends (keyof DB["postMedia"])[]>(
     postId: string,
     fields: T,
@@ -39,5 +46,5 @@ export function fetchPostMedia(db: Kysely<DB>) {
     return Number(row?.count ?? 0)
   }
 
-  return { getManyByPost, getCompletedByPosts, countCompletedByPost }
+  return { getOne, getManyByPost, getCompletedByPosts, countCompletedByPost }
 }

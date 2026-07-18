@@ -15,6 +15,7 @@ export interface JobPayloadMap {
   "es-sync-user": { userId: string }
   "es-backfill": Record<string, never>
   "link-preview-fetch": { postId: string; linkUrl: string }
+  "video-hls-encode": { postMediaId: string }
 }
 
 export type JobName = keyof JobPayloadMap
@@ -31,6 +32,7 @@ const jobQueues: { [K in JobName]: Queue } = {
   "es-sync-user": fastQueue,
   "es-backfill": slowQueue,
   "link-preview-fetch": slowQueue,
+  "video-hls-encode": slowQueue,
 }
 
 export async function enqueue<K extends JobName>(
@@ -155,6 +157,22 @@ export async function enqueueLinkPreviewFetch(postId: string, linkUrl: string): 
     { postId, linkUrl },
     {
       jobId: linkPreviewFetchJobId(postId),
+      removeOnComplete: true,
+      removeOnFail: 100,
+    },
+  )
+}
+
+export function videoHlsEncodeJobId(postMediaId: string): string {
+  return `video-hls-encode__${postMediaId}`
+}
+
+export async function enqueueVideoHlsEncode(postMediaId: string): Promise<void> {
+  await enqueue(
+    "video-hls-encode",
+    { postMediaId },
+    {
+      jobId: videoHlsEncodeJobId(postMediaId),
       removeOnComplete: true,
       removeOnFail: 100,
     },

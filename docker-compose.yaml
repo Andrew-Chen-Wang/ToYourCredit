@@ -1,9 +1,9 @@
 services:
   postgres:
-    container_name: reddit_clone_postgres
+    container_name: toyourcredit_postgres
     image: postgres:18
     ports:
-      - "51359:5432"
+      - "54821:5432"
     volumes:
       - postgres:/var/lib/postgresql
     environment:
@@ -12,19 +12,19 @@ services:
       - POSTGRES_DB=main
 
   valkey:
-    container_name: reddit_clone_valkey
+    container_name: toyourcredit_valkey
     image: valkey/valkey:latest
     ports:
-      - "55791:6379"
+      - "60532:6379"
     volumes:
       - valkey-data:/data
 
   elasticsearch:
-    container_name: reddit_clone_elasticsearch
+    container_name: toyourcredit_elasticsearch
     image: elasticsearch:9.4.3
     ports:
-      - "42601:9200"
-      - "42602:9300"
+      - "49317:9200"
+      - "49318:9300"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -40,13 +40,13 @@ services:
       - esdata:/usr/share/elasticsearch/data
 
   garage:
-    container_name: reddit_clone_garage
+    container_name: toyourcredit_garage
     image: dxflrs/garage:v2.3.0
     restart: unless-stopped
     ports:
-      - "51199:3900"
-      - "21693:3902"
-      - "59387:3903"
+      - "52246:3900"
+      - "58614:3902"
+      - "61077:3903"
     volumes:
       - ./.config/garage.toml:/etc/garage.toml
       - garage-data:/var/lib/garage/data

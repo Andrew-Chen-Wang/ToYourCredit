@@ -13,7 +13,7 @@ const fontsourceFiles = (pkg: string) =>
   )
 
 export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "https://d1i66hf38xpie.cloudfront.net/dashboard/" : "/",
+  base: mode === "production" ? "https://static.toyourcredit.forum/dashboard/" : "/",
   plugins: [
     tanstackRouter({ quoteStyle: "double" }),
     react(),

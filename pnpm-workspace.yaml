@@ -8,6 +8,7 @@ packages:
 allowBuilds:
   esbuild: true
   lefthook: true
+  msgpackr-extract: true
   sharp: true
 catalog:
   "@aws-sdk/client-s3": ^3.1049.0
@@ -16,24 +17,12 @@ catalog:
   "@base-ui/react": ^1.6.0
   "@elastic/elasticsearch": ^9.4.0
   "@faker-js/faker": ^10.3.0
-  "@handlewithcare/react-prosemirror": ^3.2.0
-  "@markdoc/markdoc": ^0.5.7
-  bullmq: ^5.76.10
-  isomorphic-dompurify: ^2.28.0
-  prosemirror-commands: ^1.7.1
-  prosemirror-history: ^1.4.1
-  prosemirror-inputrules: ^1.5.0
-  prosemirror-keymap: ^1.2.3
-  prosemirror-markdown: ^1.13.2
-  prosemirror-model: ^1.25.3
-  prosemirror-schema-list: ^1.5.1
-  prosemirror-state: ^1.4.3
-  prosemirror-view: ^1.41.3
-  react-image-crop: ^11.0.10
   "@fontsource-variable/geist": ^5.2.9
   "@fontsource-variable/geist-mono": ^5.2.8
+  "@handlewithcare/react-prosemirror": ^3.2.0
   # next tag for TypeScript 7 compatibility: https://github.com/hey-api/hey-api/issues/4235
   "@hey-api/openapi-ts": 0.0.0-next-20260711024907
+  "@markdoc/markdoc": ^0.5.7
   "@oslojs/crypto": ^1.0.1
   "@oslojs/encoding": ^1.1.0
   "@rolldown/plugin-babel": ^0.2.3
@@ -47,14 +36,26 @@ catalog:
   "@types/react-dom": ^19.2.3
   "@vitejs/plugin-react": ^6.0.3
   babel-plugin-react-compiler: ^1.0.0
+  bullmq: ^5.76.10
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
   hono: ^4.12.30
+  isomorphic-dompurify: ^2.28.0
   kysely: ^0.29.3
   lucide-react: ^1.24.0
   postcss: ^8.5.19
+  prosemirror-commands: ^1.7.1
+  prosemirror-history: ^1.4.1
+  prosemirror-inputrules: ^1.5.0
+  prosemirror-keymap: ^1.2.3
+  prosemirror-markdown: ^1.13.2
+  prosemirror-model: ^1.25.3
+  prosemirror-schema-list: ^1.5.1
+  prosemirror-state: ^1.4.3
+  prosemirror-view: ^1.41.3
   react: ^19.2.7
   react-dom: ^19.2.7
+  react-image-crop: ^11.0.10
   tailwind-merge: ^3.6.0
   tailwindcss: ^4.3.2
   tailwindcss-animate: ^1.0.7

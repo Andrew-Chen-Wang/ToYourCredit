@@ -449,6 +449,8 @@ export interface PostMedia {
   byteSize: Int8 | null
   createdAt: Generated<Timestamp>
   height: number | null
+  hlsMasterKey: string | null
+  hlsStatus: string | null
   id: string
   mediaType: string
   mimeType: string | null

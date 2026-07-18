@@ -47,11 +47,7 @@ function ChatPage() {
 
   // Resolve the selected conversation from the full list so the thread has its
   // metadata regardless of the active list filter.
-  const { data: allChats } = useQuery({
-    ...getApiV1ChatOptions({ query: { filter: "all" } }),
-    refetchInterval: 15_000,
-    refetchIntervalInBackground: false,
-  })
+  const { data: allChats } = useQuery(getApiV1ChatOptions({ query: { filter: "all" } }))
   const selected = allChats?.data.find((conv) => conv.id === selectedId)
 
   const setSelected = (id: string | undefined) => {

@@ -7,6 +7,7 @@ import {
   ConversationList,
 } from "@frontends/dashboard/components/chat/ConversationList"
 import { useChatDock } from "@frontends/dashboard/components/chat/ChatDockContext"
+import { useChatSocket } from "@frontends/dashboard/components/chat/ChatSocket"
 import { NewChatDialog } from "@frontends/dashboard/components/chat/NewChatDialog"
 import { conversationTitle, type ChatFilter } from "@frontends/dashboard/components/chat/types"
 import {
@@ -18,9 +19,11 @@ import { ArrowLeft, ChevronDown, MessageCircle, SquareArrowOutUpRight, X } from 
 import { useState } from "react"
 
 function CollapsedBar({ onOpen }: { onOpen: () => void }) {
+  const { connected } = useChatSocket()
   const { data } = useQuery({
     ...getApiV1ChatUnreadCountOptions(),
-    refetchInterval: 15_000,
+    // Realtime via websocket invalidations; slow poll only while disconnected.
+    refetchInterval: connected ? false : 30_000,
     refetchIntervalInBackground: false,
   })
   const count = data?.count ?? 0
@@ -58,8 +61,6 @@ export function ChatDock() {
 
   const { data: allChats } = useQuery({
     ...getApiV1ChatOptions({ query: { filter: "all" } }),
-    refetchInterval: 15_000,
-    refetchIntervalInBackground: false,
     enabled: dock.view === "open",
   })
   const selected = allChats?.data.find((conv) => conv.id === dock.selectedId)

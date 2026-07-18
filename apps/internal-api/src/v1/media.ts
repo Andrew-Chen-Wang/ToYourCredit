@@ -4,7 +4,7 @@ import { crudCommunity } from "@lib/dao/community/crud"
 import { fetchPost } from "@lib/dao/post/fetch"
 import { crudUser } from "@lib/dao/user/crud"
 import { db } from "@template-nextjs/db"
-import { createImageUploadPost, existsOnS3, getExtensionForImageContentType } from "@utils/aws"
+import { createImageUploadPut, existsOnS3, getExtensionForImageContentType } from "@utils/aws"
 import { promoteMediaCleanup } from "@utils/queues"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
@@ -22,9 +22,6 @@ import {
   mediaKeyConfirmSchemaRequest,
   mediaUploadSchemaResponse,
 } from "./media.serializer"
-
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024
-const BANNER_MAX_BYTES = 10 * 1024 * 1024
 
 const uploadResponse = {
   200: {
@@ -93,15 +90,10 @@ const app = new Hono()
       const { mimeType } = c.req.valid("json")
       const ext = getExtensionForImageContentType(mimeType) ?? "bin"
       const key = `user-avatar/${user.id}/${randomUUID()}.${ext}`
-      const presigned = await createImageUploadPost({
-        key,
-        contentType: mimeType,
-        maxSizeBytes: AVATAR_MAX_BYTES,
-      })
+      const presigned = await createImageUploadPut({ key, contentType: mimeType })
       return c.json({
         key: presigned.key,
         url: presigned.url,
-        fields: presigned.fields,
         publicUrl: presigned.publicUrl,
       })
     },
@@ -138,15 +130,10 @@ const app = new Hono()
       const { mimeType } = c.req.valid("json")
       const ext = getExtensionForImageContentType(mimeType) ?? "bin"
       const key = `user-banner/${user.id}/${randomUUID()}.${ext}`
-      const presigned = await createImageUploadPost({
-        key,
-        contentType: mimeType,
-        maxSizeBytes: BANNER_MAX_BYTES,
-      })
+      const presigned = await createImageUploadPut({ key, contentType: mimeType })
       return c.json({
         key: presigned.key,
         url: presigned.url,
-        fields: presigned.fields,
         publicUrl: presigned.publicUrl,
       })
     },
@@ -185,15 +172,10 @@ const app = new Hono()
       if (!mod.ok) return throwForbidden(c, "You cannot configure this community")
       const ext = getExtensionForImageContentType(mimeType) ?? "bin"
       const key = `community-icon/${communityId}/${randomUUID()}.${ext}`
-      const presigned = await createImageUploadPost({
-        key,
-        contentType: mimeType,
-        maxSizeBytes: AVATAR_MAX_BYTES,
-      })
+      const presigned = await createImageUploadPut({ key, contentType: mimeType })
       return c.json({
         key: presigned.key,
         url: presigned.url,
-        fields: presigned.fields,
         publicUrl: presigned.publicUrl,
       })
     },
@@ -234,15 +216,10 @@ const app = new Hono()
       if (!mod.ok) return throwForbidden(c, "You cannot configure this community")
       const ext = getExtensionForImageContentType(mimeType) ?? "bin"
       const key = `community-banner/${communityId}/${randomUUID()}.${ext}`
-      const presigned = await createImageUploadPost({
-        key,
-        contentType: mimeType,
-        maxSizeBytes: BANNER_MAX_BYTES,
-      })
+      const presigned = await createImageUploadPut({ key, contentType: mimeType })
       return c.json({
         key: presigned.key,
         url: presigned.url,
-        fields: presigned.fields,
         publicUrl: presigned.publicUrl,
       })
     },

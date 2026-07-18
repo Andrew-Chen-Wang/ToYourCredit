@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { validateSessionToken } from "./lib/auth"
 
 /** Public paths handled by Next.js — everything else goes to the dashboard SPA */
-const NEXTJS_PUBLIC_PREFIXES = ["/login", "/blog", "/api", "/legal", "/about", "/rules"]
+const NEXTJS_PUBLIC_PREFIXES = ["/login", "/blog", "/legal", "/about", "/rules"]
 if (process.env.NODE_ENV === "development") {
   NEXTJS_PUBLIC_PREFIXES.push("/dev-login")
 }
@@ -93,6 +93,12 @@ function handleCsrfAndCookies(request: NextRequest): NextResponse | null {
     const token = request.cookies.get("session")?.value ?? null
     if (token !== null) {
       response.cookies.set("session", token, {
+        // Scoped to the apex in prod so the cookie also reaches
+        // api.toyourcredit.forum (the standalone Hono API).
+        domain:
+          process.env.NODE_ENV === "development"
+            ? undefined
+            : `.${process.env.NEXT_PUBLIC_HOSTNAME}`,
         path: "/",
         maxAge: 60 * 60 * 24 * 30,
         sameSite: "lax",
@@ -129,7 +135,7 @@ function rewriteToSpa(
   prodFolder: string,
 ): NextResponse {
   const isDev = process.env.NODE_ENV === "development"
-  const spaOrigin = isDev ? `http://localhost:${devPort}` : "https://d1i66hf38xpie.cloudfront.net"
+  const spaOrigin = isDev ? `http://localhost:${devPort}` : "https://static.toyourcredit.forum"
 
   const spaUrl = new URL(pathname, spaOrigin)
   spaUrl.search = request.nextUrl.search

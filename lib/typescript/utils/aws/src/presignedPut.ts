@@ -1,4 +1,5 @@
-import { createPresignedPost } from "@aws-sdk/s3-presigned-post"
+import { PutObjectCommand } from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { getS3BucketName, publicMediaUrl, s3Client } from "./client"
 
 const IMAGE_CONTENT_TYPE_TO_EXT: Record<string, string> = {
@@ -50,54 +51,47 @@ export function getMediaMaxSize(contentType: string): number | undefined {
   return MEDIA_CONTENT_TYPE_TO_MAX_BYTES[contentType]
 }
 
-export interface PresignedUploadPost {
+export interface PresignedUploadPut {
   url: string
-  fields: Record<string, string>
   key: string
   publicUrl: string
 }
 
-async function createUploadPost(
-  key: string,
-  contentType: string,
-  maxSizeBytes: number,
-): Promise<PresignedUploadPost> {
-  const Bucket = getS3BucketName()
-  const { url, fields } = await createPresignedPost(s3Client, {
-    Bucket,
+// Presigns a PUT rather than a POST policy because Cloudflare R2 (the production S3
+// backend) does not support S3 POST policies. A presigned PUT cannot enforce a maximum
+// object size, so callers must validate the declared byteSize/mime BEFORE signing; the
+// media-cleanup job remains the backstop for anything that slips through.
+async function createUploadPut(key: string, contentType: string): Promise<PresignedUploadPut> {
+  const command = new PutObjectCommand({
+    Bucket: getS3BucketName(),
     Key: key,
-    Conditions: [
-      ["content-length-range", 0, maxSizeBytes],
-      ["eq", "$Content-Type", contentType],
-    ],
-    Fields: {
-      "Content-Type": contentType,
-    },
-    Expires: UPLOAD_EXPIRY_SECONDS,
+    ContentType: contentType,
+  })
+  const url = await getSignedUrl(s3Client, command, {
+    expiresIn: UPLOAD_EXPIRY_SECONDS,
+    // Sign the content type so the upload must match what the caller declared.
+    signableHeaders: new Set(["content-type"]),
   })
 
-  return { url, fields, key, publicUrl: publicMediaUrl(key) }
+  return { url, key, publicUrl: publicMediaUrl(key) }
 }
 
-export async function createImageUploadPost(params: {
+export async function createImageUploadPut(params: {
   key: string
   contentType: string
-  maxSizeBytes?: number
-}): Promise<PresignedUploadPost> {
+}): Promise<PresignedUploadPut> {
   if (!isAllowedImageType(params.contentType)) {
     throw new Error(`Unsupported image content type: ${params.contentType}`)
   }
-  return createUploadPost(params.key, params.contentType, params.maxSizeBytes ?? IMAGE_MAX_BYTES)
+  return createUploadPut(params.key, params.contentType)
 }
 
-export async function createMediaUploadPost(params: {
+export async function createMediaUploadPut(params: {
   key: string
   contentType: string
-  maxSizeBytes?: number
-}): Promise<PresignedUploadPost> {
-  const defaultMax = getMediaMaxSize(params.contentType)
-  if (defaultMax === undefined) {
+}): Promise<PresignedUploadPut> {
+  if (!isAllowedMediaType(params.contentType)) {
     throw new Error(`Unsupported media content type: ${params.contentType}`)
   }
-  return createUploadPost(params.key, params.contentType, params.maxSizeBytes ?? defaultMax)
+  return createUploadPut(params.key, params.contentType)
 }

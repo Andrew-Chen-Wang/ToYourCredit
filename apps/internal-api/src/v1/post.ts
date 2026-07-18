@@ -10,7 +10,7 @@ import { crudPostVote } from "@lib/dao/postVote/crud"
 import { fetchPostFlairTemplate } from "@lib/dao/postFlairTemplate/fetch"
 import { crudPostView } from "@lib/dao/postView/crud"
 import { db } from "@template-nextjs/db"
-import { createMediaUploadPost, getExtensionForMediaContentType } from "@utils/aws"
+import { createMediaUploadPut, getExtensionForMediaContentType } from "@utils/aws"
 import { enqueueEsSyncPost, enqueueLinkPreviewFetch, enqueueMediaCleanup } from "@utils/queues"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
@@ -370,17 +370,14 @@ const app = new Hono()
         await crudPostMedia(db).createMany(created.id, items)
         const uploads = await Promise.all(
           items.map(async (item) => {
-            const maxSizeBytes = item.mediaType === "image" ? IMAGE_MAX_BYTES : VIDEO_MAX_BYTES
-            const presigned = await createMediaUploadPost({
+            const presigned = await createMediaUploadPut({
               key: item.s3Key,
               contentType: item.mimeType,
-              maxSizeBytes,
             })
             return {
               position: item.position,
               key: item.s3Key,
               url: presigned.url,
-              fields: presigned.fields,
             }
           }),
         )

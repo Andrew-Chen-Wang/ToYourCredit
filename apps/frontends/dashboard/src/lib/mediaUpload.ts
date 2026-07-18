@@ -3,8 +3,8 @@
  * form and the avatar/banner/community-appearance croppers.
  *
  * Protocol: create the record (post or presigned endpoint) to get a target
- * `{ url, fields }`, POST a multipart form with every field appended BEFORE the
- * file (S3/Garage requires the file last), then call the matching confirm.
+ * `{ url }`, PUT the raw file bytes to it with the Content-Type the server
+ * signed, then call the matching confirm.
  */
 
 export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const
@@ -29,7 +29,6 @@ export type MediaDraft = {
 
 export type PresignedTarget = {
   url: string
-  fields: Record<string, unknown>
 }
 
 function isImageMime(type: string): boolean {
@@ -76,8 +75,9 @@ export async function readImageDimensions(
 }
 
 /**
- * POSTs a file to a presigned S3/Garage target, reporting upload progress.
- * Resolves on a 2xx response, rejects otherwise.
+ * PUTs a file to a presigned S3/R2/Garage target, reporting upload progress.
+ * The Content-Type header must match what the server signed. Resolves on a
+ * 2xx response, rejects otherwise.
  */
 export function uploadToPresigned(
   target: PresignedTarget,
@@ -85,14 +85,9 @@ export function uploadToPresigned(
   onProgress?: (percent: number) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const form = new FormData()
-    for (const [key, value] of Object.entries(target.fields)) {
-      form.append(key, String(value))
-    }
-    form.append("file", file)
-
     const xhr = new XMLHttpRequest()
-    xhr.open("POST", target.url)
+    xhr.open("PUT", target.url)
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream")
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable && onProgress) {
         onProgress(Math.round((event.loaded / event.total) * 100))
@@ -108,6 +103,6 @@ export function uploadToPresigned(
     xhr.addEventListener("error", () => {
       reject(new Error("Upload failed"))
     })
-    xhr.send(form)
+    xhr.send(file)
   })
 }

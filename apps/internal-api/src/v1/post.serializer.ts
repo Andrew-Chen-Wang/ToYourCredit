@@ -41,7 +41,6 @@ export const postCreateSchemaResponse = Type.Object({
         position: Type.Number(),
         key: Type.String(),
         url: Type.String(),
-        fields: Type.Record(Type.String(), Type.String()),
       }),
     ),
   ),
@@ -126,6 +125,7 @@ export const postCardSchema = Type.Object({
     Type.Object({
       mediaType: Type.String(),
       url: Type.String(),
+      hlsUrl: Nullable(Type.String()),
       width: Nullable(Type.Number()),
       height: Nullable(Type.Number()),
     }),

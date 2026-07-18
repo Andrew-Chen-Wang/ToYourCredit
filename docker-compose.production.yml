@@ -1,0 +1,186 @@
+# Production compose file for the OVH host (40.160.59.152).
+#
+# Lives at /opt/toyourcredit/docker-compose.production.yml on the server.
+#
+# Variable interpolation (${...}) below is resolved from the `.env` file that
+# sits NEXT TO this compose file in the compose project directory
+# (/opt/toyourcredit/.env). Put ALL interpolated variables there:
+#
+#   POSTGRES_PASSWORD=...
+#   VALKEY_PASSWORD=...
+#   ELASTIC_PASSWORD=...
+#   API_BLUE_TAG=<image tag>      # managed by bin/deploy/deploy-api.sh
+#   API_GREEN_TAG=<image tag>     # managed by bin/deploy/deploy-api.sh
+#   BULLGROUND_TAG=<image tag>    # managed by bin/deploy/deploy-bullground.sh
+#
+# App services additionally read their runtime environment from
+# `.env.production` (env_file below), also placed in /opt/toyourcredit.
+# S3_* variables in .env.production point at Cloudflare R2 (no garage in prod).
+#
+# Blue/green: neither internal-api-blue nor internal-api-green starts with a
+# plain `docker compose up -d` — both are gated behind compose profiles so the
+# deploy script targets them explicitly with `--profile blue` / `--profile green`.
+# Databases, traefik, and bullground have no profile and always start.
+
+services:
+  traefik:
+    container_name: toyourcredit_traefik
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=acme@toyourcredit.forum
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  # Blue/green pair. Both carry IDENTICAL traefik labels: they register as
+  # backends of the same traefik service (`internal-api`), so whichever
+  # color(s) are up and passing /api/health receive traffic. The deploy script
+  # brings the inactive color up, waits for health, then stops the old color.
+  internal-api-blue:
+    container_name: toyourcredit_internal_api_blue
+    image: ghcr.io/andrew-chen-wang/toyourcredit-internal-api:${API_BLUE_TAG:-latest}
+    profiles: ["blue"]
+    restart: unless-stopped
+    env_file: .env.production
+    mem_limit: 4g
+    stop_grace_period: 90s
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      # The slim node image ships no curl/wget; use node's built-in fetch.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001/api/health').then(r=>{if(r.status!==200)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.internal-api.rule=Host(`api.toyourcredit.forum`)
+      - traefik.http.routers.internal-api.entrypoints=websecure
+      - traefik.http.routers.internal-api.tls.certresolver=le
+      - traefik.http.routers.internal-api.service=internal-api
+      - traefik.http.services.internal-api.loadbalancer.server.port=3001
+      - traefik.http.services.internal-api.loadbalancer.healthCheck.path=/api/health
+      - traefik.http.services.internal-api.loadbalancer.healthCheck.interval=5s
+
+  internal-api-green:
+    container_name: toyourcredit_internal_api_green
+    image: ghcr.io/andrew-chen-wang/toyourcredit-internal-api:${API_GREEN_TAG:-latest}
+    profiles: ["green"]
+    restart: unless-stopped
+    env_file: .env.production
+    mem_limit: 4g
+    stop_grace_period: 90s
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001/api/health').then(r=>{if(r.status!==200)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.internal-api.rule=Host(`api.toyourcredit.forum`)
+      - traefik.http.routers.internal-api.entrypoints=websecure
+      - traefik.http.routers.internal-api.tls.certresolver=le
+      - traefik.http.routers.internal-api.service=internal-api
+      - traefik.http.services.internal-api.loadbalancer.server.port=3001
+      - traefik.http.services.internal-api.loadbalancer.healthCheck.path=/api/health
+      - traefik.http.services.internal-api.loadbalancer.healthCheck.interval=5s
+
+  bullground:
+    container_name: toyourcredit_bullground
+    image: ghcr.io/andrew-chen-wang/toyourcredit-bullground:${BULLGROUND_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.production
+    mem_limit: 6g
+    # bullground has a 9.5-minute SIGTERM drain built in; give it the full 10.
+    stop_grace_period: 600s
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  # Databases are bound to PUBLIC ports so Vercel (website) can reach them.
+  postgres:
+    container_name: toyourcredit_postgres
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      - "54821:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=main
+
+  valkey:
+    container_name: toyourcredit_valkey
+    image: valkey/valkey:latest
+    restart: unless-stopped
+    command: ["valkey-server", "--requirepass", "${VALKEY_PASSWORD}"]
+    ports:
+      - "60532:6379"
+    volumes:
+      - valkey-data:/data
+
+  elasticsearch:
+    container_name: toyourcredit_elasticsearch
+    image: elasticsearch:9.4.3
+    restart: unless-stopped
+    ports:
+      - "49317:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms12g -Xmx12g
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    mem_limit: 16g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  postgres:
+    driver: local
+  valkey-data:
+    driver: local
+  esdata:
+    driver: local
