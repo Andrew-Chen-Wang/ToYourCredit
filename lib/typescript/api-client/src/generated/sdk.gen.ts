@@ -356,6 +356,9 @@ import type {
   PatchApiV1UserMeSettingsData,
   PatchApiV1UserMeSettingsErrors,
   PatchApiV1UserMeSettingsResponses,
+  PatchApiV1UserMeUsernameData,
+  PatchApiV1UserMeUsernameErrors,
+  PatchApiV1UserMeUsernameResponses,
   PostApiV1AuthLogoutData,
   PostApiV1AuthLogoutErrors,
   PostApiV1AuthLogoutResponses,
@@ -932,6 +935,25 @@ export const patchApiV1UserMe = <ThrowOnError extends boolean = false>(
     ThrowOnError
   >({
     url: "/api/v1/user/me",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  })
+
+/**
+ * Change the auto-generated username once; after the first change it is permanent
+ */
+export const patchApiV1UserMeUsername = <ThrowOnError extends boolean = false>(
+  options?: Options<PatchApiV1UserMeUsernameData, ThrowOnError>,
+): RequestResult<PatchApiV1UserMeUsernameResponses, PatchApiV1UserMeUsernameErrors, ThrowOnError> =>
+  (options?.client ?? client).patch<
+    PatchApiV1UserMeUsernameResponses,
+    PatchApiV1UserMeUsernameErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/user/me/username",
     ...options,
     headers: {
       "Content-Type": "application/json",

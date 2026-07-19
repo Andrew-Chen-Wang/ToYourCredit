@@ -1,7 +1,7 @@
 import { defineConfig } from "@hey-api/openapi-ts"
 
 export default defineConfig({
-  input: "http://localhost:3001/api/openapi",
+  input: "http://localhost:3013/api/openapi",
   output: {
     indexFile: false,
     path: "lib/typescript/api-client/src/generated",

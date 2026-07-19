@@ -17,7 +17,7 @@ const spec: OpenApiSpecsOptions = {
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
+        url: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3013",
         description: "Local Server",
       },
     ],
@@ -84,7 +84,7 @@ if (process.argv.includes("--openapi")) {
       process.exit(1)
     })
 } else {
-  const server = serve({ fetch: app.fetch, port: Number(process.env.API_PORT) || 3001 }, (info) => {
+  const server = serve({ fetch: app.fetch, port: Number(process.env.API_PORT) || 3013 }, (info) => {
     console.log(`Listening on http://localhost:${info.port}`)
   })
   nodeWebSocket.injectWebSocket(server)

@@ -9,7 +9,7 @@ export * from "./generated/sdk.gen"
 
 export const baseUrl =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:3001"
+    ? "http://localhost:3013"
     : "https://api.toyourcredit.forum"
 
 client.setConfig({ baseUrl, credentials: "include" })

@@ -143,6 +143,7 @@ import {
   patchApiV1RemovalReasonReasonById,
   patchApiV1UserMe,
   patchApiV1UserMeSettings,
+  patchApiV1UserMeUsername,
   postApiV1AuthLogout,
   postApiV1ChatByConversationIdAccept,
   postApiV1ChatByConversationIdHide,
@@ -580,6 +581,9 @@ import type {
   PatchApiV1UserMeSettingsData,
   PatchApiV1UserMeSettingsError,
   PatchApiV1UserMeSettingsResponse,
+  PatchApiV1UserMeUsernameData,
+  PatchApiV1UserMeUsernameError,
+  PatchApiV1UserMeUsernameResponse,
   PostApiV1AuthLogoutData,
   PostApiV1AuthLogoutError,
   PostApiV1AuthLogoutResponse,
@@ -1762,6 +1766,33 @@ export const patchApiV1UserMeMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await patchApiV1UserMe({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Change the auto-generated username once; after the first change it is permanent
+ */
+export const patchApiV1UserMeUsernameMutation = (
+  options?: Partial<Options<PatchApiV1UserMeUsernameData>>,
+): UseMutationOptions<
+  PatchApiV1UserMeUsernameResponse,
+  PatchApiV1UserMeUsernameError,
+  Options<PatchApiV1UserMeUsernameData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PatchApiV1UserMeUsernameResponse,
+    PatchApiV1UserMeUsernameError,
+    Options<PatchApiV1UserMeUsernameData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await patchApiV1UserMeUsername({
         ...options,
         ...fnOptions,
         throwOnError: true,

@@ -210,6 +210,9 @@ export const getApiV1UserMeDownvotedResponseTransformer = async (
 export const getApiV1UserMeResponseTransformer = async (
   data: any,
 ): Promise<GetApiV1UserMeResponse> => {
+  if (data.usernameChangedAt) {
+    data.usernameChangedAt = new Date(data.usernameChangedAt)
+  }
   data.createdAt = new Date(data.createdAt)
   return data
 }
@@ -217,6 +220,9 @@ export const getApiV1UserMeResponseTransformer = async (
 export const patchApiV1UserMeResponseTransformer = async (
   data: any,
 ): Promise<PatchApiV1UserMeResponse> => {
+  if (data.usernameChangedAt) {
+    data.usernameChangedAt = new Date(data.usernameChangedAt)
+  }
   data.createdAt = new Date(data.createdAt)
   return data
 }

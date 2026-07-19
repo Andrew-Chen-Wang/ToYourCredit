@@ -97,7 +97,7 @@ function mapPosts(
 function permalinkForPost(post: FeedPost): string {
   return post.community
     ? `/r/${post.community.name}/comments/${post.id}`
-    : `/user/${post.author?.username ?? ""}`
+    : `/user/${post.author?.username ?? ""}/comments/${post.id}`
 }
 
 /**

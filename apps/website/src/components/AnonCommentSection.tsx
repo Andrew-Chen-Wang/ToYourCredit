@@ -17,6 +17,8 @@ import { SeoLink } from "@website/components/seo-link"
 export type AnonCommentSectionProps = {
   postId: string
   communityName: string
+  /** Overrides the /r/<community>/comments/<post> permalink base (profile posts). */
+  permalinkBase?: string
   sort: CommentSortValue
   nodes: CommentNode[]
   ancestors: CommentNode[]
@@ -39,6 +41,7 @@ export type AnonCommentSectionProps = {
 export function AnonCommentSection({
   postId,
   communityName,
+  permalinkBase,
   sort,
   nodes,
   ancestors,
@@ -51,7 +54,7 @@ export function AnonCommentSection({
 }: AnonCommentSectionProps) {
   const [loginOpen, setLoginOpen] = useState(false)
   const tree = focusCommentId ? assembleFocusedThread(ancestors, nodes) : assembleCommentTree(nodes)
-  const basePath = `/r/${communityName}/comments/${postId}`
+  const basePath = permalinkBase ?? `/r/${communityName}/comments/${postId}`
 
   function permalink(commentId: string): string {
     return `${basePath}?comment=${commentId}&sort=${sort}`

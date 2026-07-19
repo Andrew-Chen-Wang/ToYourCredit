@@ -37,6 +37,7 @@ import {
   putApiV1NotificationPreferencesMutation,
 } from "@lib/api-client/generated/@tanstack/react-query.gen"
 import {
+  patchApiV1UserMeUsername,
   postApiV1MediaAvatarConfirm,
   postApiV1MediaAvatarUpload,
   postApiV1MediaBannerConfirm,
@@ -139,6 +140,100 @@ const CHAT_POLICIES: { value: NonNullable<SettingsBody["chatRequestPolicy"]>; la
   { value: "nobody", label: "Nobody" },
 ]
 
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]{3,20}$/
+
+function UsernameRow() {
+  const queryClient = useQueryClient()
+  const { data: user } = useQuery(getApiV1UserMeOptions())
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+
+  const change = useMutation({
+    mutationFn: (username: string) =>
+      patchApiV1UserMeUsername({ body: { username }, throwOnError: true }),
+    onSuccess: () => {
+      toast.success("Username changed — this was your one change")
+      setEditing(false)
+      void queryClient.invalidateQueries({ queryKey: getApiV1UserMeOptions().queryKey })
+    },
+    onError: () => {
+      toast.error("Could not change username — it may be taken")
+    },
+  })
+
+  const locked = user?.usernameChangedAt != null
+  const valid = USERNAME_PATTERN.test(draft) && draft !== user?.username
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="account-username">Username</Label>
+      {editing && !locked ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">u/</span>
+            <Input
+              id="account-username"
+              value={draft}
+              maxLength={20}
+              autoComplete="off"
+              onChange={(e) => {
+                setDraft(e.target.value.replace(/\s/g, ""))
+              }}
+              className="w-56"
+            />
+            <LoadingButton
+              size="sm"
+              disabled={!valid}
+              loading={change.isPending}
+              onClick={() => {
+                change.mutate(draft)
+              }}
+            >
+              Save
+            </LoadingButton>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditing(false)
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+          <p className="text-xs text-destructive">
+            You can only change your username once — after this it is permanent. 3-20 letters,
+            numbers, underscores, or hyphens.
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Input id="account-username" value={`u/${user?.username ?? ""}`} readOnly disabled />
+          {locked ? (
+            <p className="shrink-0 text-xs text-muted-foreground">Permanent</p>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setDraft(user?.username ?? "")
+                setEditing(true)
+              }}
+            >
+              Change
+            </Button>
+          )}
+        </div>
+      )}
+      {!locked && !editing ? (
+        <p className="text-xs text-muted-foreground">
+          You can change your auto-generated username once; it becomes permanent after that.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function AccountTab() {
   const { data: user } = useQuery(getApiV1UserMeOptions())
   const deleteMutation = useMutation({
@@ -162,6 +257,7 @@ function AccountTab() {
             <Label htmlFor="account-email">Email</Label>
             <Input id="account-email" value={user?.email ?? ""} readOnly disabled />
           </div>
+          <UsernameRow />
           <div className="flex flex-col gap-2">
             <Label>Credit</Label>
             <p className="text-sm text-muted-foreground">

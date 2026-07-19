@@ -20,6 +20,7 @@ const SHARED_ROUTES: SharedRoute[] = [
   { path: "/posting", spa: "dashboard" },
   { path: "/posting/[id]", spa: "dashboard" },
   { path: "/user/[username]", spa: "dashboard" },
+  { path: "/user/[username]/comments/[...rest]", spa: "dashboard" },
   { path: "/r/[name]", spa: "dashboard" },
   { path: "/r/[name]/comments/[...rest]", spa: "dashboard" },
   { path: "/r/[name]/wiki/[[...rest]]", spa: "dashboard" },
@@ -67,10 +68,10 @@ function findSharedRoute(pathname: string): SharedRoute | undefined {
 
 const SPA_ADMIN = {
   prefix: "/admin",
-  devPort: 3003,
+  devPort: 3012,
 } as const
 
-const DASHBOARD_DEV_PORT = 3002
+const DASHBOARD_DEV_PORT = 3011
 
 function isNextJsRoute(pathname: string): boolean {
   if (NEXTJS_PUBLIC_EXACT.has(pathname)) return true

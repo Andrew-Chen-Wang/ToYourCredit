@@ -407,7 +407,10 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
           params: { name: community.name, _splat: result.id },
         })
       } else if (me) {
-        void navigate({ to: "/user/$username", params: { username: me.username } })
+        void navigate({
+          to: "/user/$username/comments/$",
+          params: { username: me.username, _splat: result.id },
+        })
       }
     },
     onError: () => {
@@ -471,7 +474,10 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
           params: { name: community.name, _splat: data.id },
         })
       } else if (me) {
-        void navigate({ to: "/user/$username", params: { username: me.username } })
+        void navigate({
+          to: "/user/$username/comments/$",
+          params: { username: me.username, _splat: data.id },
+        })
       }
     } catch {
       toast.error("Could not upload media", {

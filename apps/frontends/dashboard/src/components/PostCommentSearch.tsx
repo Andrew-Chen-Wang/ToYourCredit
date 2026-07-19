@@ -11,11 +11,17 @@ const DEBOUNCE_MS = 250
 export type PostCommentSearchProps = {
   postId: string
   communityName: string
+  /** When set, matches link to the profile-post detail route instead of r/<name>. */
+  profileUsername?: string
 }
 
 /** Compact "Search comments" box on the post detail page, scoped to this post via
  *  /v1/search?type=comments&postId=. Results link to the comment permalink (?comment=). */
-export function PostCommentSearch({ postId, communityName }: PostCommentSearchProps) {
+export function PostCommentSearch({
+  postId,
+  communityName,
+  profileUsername,
+}: PostCommentSearchProps) {
   const [draft, setDraft] = useState("")
   const [q, setQ] = useState("")
 
@@ -79,8 +85,12 @@ export function PostCommentSearch({ postId, communityName }: PostCommentSearchPr
               {results.map(({ comment }) => (
                 <Link
                   key={comment.id}
-                  to="/r/$name/comments/$"
-                  params={{ name: communityName, _splat: postId }}
+                  to={profileUsername ? "/user/$username/comments/$" : "/r/$name/comments/$"}
+                  params={
+                    profileUsername
+                      ? { username: profileUsername, _splat: postId }
+                      : { name: communityName, _splat: postId }
+                  }
                   search={{ comment: comment.id }}
                   className="rounded-md border bg-card p-2 hover:border-muted-foreground/30"
                 >

@@ -4,6 +4,7 @@ import { Nullable, UUID7String } from "../utils/common.serializer"
 export const userMeSchemaResponse = Type.Object({
   id: UUID7String,
   username: Type.String(),
+  usernameChangedAt: Nullable(Type.String({ format: "date-time" })),
   displayName: Nullable(Type.String()),
   about: Nullable(Type.String()),
   avatarImageKey: Nullable(Type.String()),
@@ -76,4 +77,12 @@ export const userModeratingSchemaResponse = Type.Object({
       memberCount: Type.Number(),
     }),
   ),
+})
+
+export const usernameChangeSchemaRequest = Type.Object({
+  username: Type.String({ minLength: 3, maxLength: 20, pattern: "^[A-Za-z0-9_-]+$" }),
+})
+
+export const usernameChangeSchemaResponse = Type.Object({
+  username: Type.String(),
 })

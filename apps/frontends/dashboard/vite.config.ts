@@ -49,6 +49,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    port: 3002,
+    port: 3011,
   },
 }))

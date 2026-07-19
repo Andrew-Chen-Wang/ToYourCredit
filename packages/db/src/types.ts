@@ -607,6 +607,7 @@ export interface User {
   suspendedAt: Timestamp | null
   suspensionReason: string | null
   username: string
+  usernameChangedAt: Timestamp | null
   verificationStatus: Generated<string>
 }
 

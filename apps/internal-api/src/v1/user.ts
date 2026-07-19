@@ -14,6 +14,7 @@ import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
 import { authMiddleware, authNoThrowMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
+import { ErrorCode } from "../utils/errors.enum"
 import { cursorOffsetPaginate } from "../utils/pagination"
 import { throwBadRequest, throwInternalServerError, throwNotFound } from "../utils/http-exception"
 import { buildCommentsWithPost } from "./comment-with-post"
@@ -21,6 +22,8 @@ import { feedSchemaResponse } from "./feed.serializer"
 import {
   userByUsernameSchemaParam,
   userMeSchemaResponse,
+  usernameChangeSchemaRequest,
+  usernameChangeSchemaResponse,
   userModeratingSchemaResponse,
   userPublicSchemaResponse,
   userSocialLinkCreateSchemaRequest,
@@ -486,6 +489,7 @@ const app = new Hono()
       const profile = await fetchUser(db).getOne(user.id, [
         "id",
         "username",
+        "usernameChangedAt",
         "displayName",
         "about",
         "avatarImageKey",
@@ -502,6 +506,7 @@ const app = new Hono()
       return c.json({
         id: profile.id,
         username: profile.username,
+        usernameChangedAt: profile.usernameChangedAt?.toISOString() ?? null,
         displayName: profile.displayName,
         about: profile.about,
         avatarImageKey: profile.avatarImageKey,
@@ -512,6 +517,41 @@ const app = new Hono()
         email: profile.email,
         isAdmin: profile.isAdmin,
       })
+    },
+  )
+  .patch(
+    "/me/username",
+    describeRoute({
+      description:
+        "Change the auto-generated username once; after the first change it is permanent",
+      responses: {
+        200: {
+          description: "Username changed",
+          content: { "application/json": { schema: resolver(usernameChangeSchemaResponse) } },
+        },
+        400: {
+          description: "Username taken or already changed",
+          content: { "application/json": { schema: resolver(ErrorSchemaResponse) } },
+        },
+      },
+    }),
+    validator("json", usernameChangeSchemaRequest),
+    async (c) => {
+      const user = c.var.user
+      const { username } = c.req.valid("json")
+
+      const result = await crudUser(db).changeUsername(user.id, username)
+      if (!result.ok) {
+        if (result.reason === "TAKEN") {
+          return throwBadRequest(c, "That username is taken", ErrorCode.ResourceAlreadyExists, {
+            target: "username",
+          })
+        }
+        return throwBadRequest(c, "Your username has already been changed once")
+      }
+      await enqueueEsSyncUser(user.id)
+
+      return c.json({ username: result.username })
     },
   )
   .patch(

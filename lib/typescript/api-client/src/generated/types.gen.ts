@@ -1151,6 +1151,7 @@ export type GetApiV1UserMeResponses = {
   200: {
     id: string
     username: string
+    usernameChangedAt: Date | null
     displayName: string | null
     about: string | null
     avatarImageKey: string | null
@@ -1195,6 +1196,7 @@ export type PatchApiV1UserMeResponses = {
   200: {
     id: string
     username: string
+    usernameChangedAt: Date | null
     displayName: string | null
     about: string | null
     avatarImageKey: string | null
@@ -1208,6 +1210,37 @@ export type PatchApiV1UserMeResponses = {
 }
 
 export type PatchApiV1UserMeResponse = PatchApiV1UserMeResponses[keyof PatchApiV1UserMeResponses]
+
+export type PatchApiV1UserMeUsernameData = {
+  body?: {
+    username: string
+  }
+  path?: never
+  query?: never
+  url: "/api/v1/user/me/username"
+}
+
+export type PatchApiV1UserMeUsernameErrors = {
+  /**
+   * Username taken or already changed
+   */
+  400: ErrorResponseT
+}
+
+export type PatchApiV1UserMeUsernameError =
+  PatchApiV1UserMeUsernameErrors[keyof PatchApiV1UserMeUsernameErrors]
+
+export type PatchApiV1UserMeUsernameResponses = {
+  /**
+   * Username changed
+   */
+  200: {
+    username: string
+  }
+}
+
+export type PatchApiV1UserMeUsernameResponse =
+  PatchApiV1UserMeUsernameResponses[keyof PatchApiV1UserMeUsernameResponses]
 
 export type GetApiV1UserUsernameAvailableData = {
   body?: never

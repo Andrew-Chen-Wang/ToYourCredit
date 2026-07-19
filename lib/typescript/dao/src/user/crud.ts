@@ -36,6 +36,33 @@ export function crudUser(db: Kysely<DB>) {
     }
   }
 
+  /**
+   * One-time username change: allowed only while username_changed_at is null,
+   * then locked forever. The guarded UPDATE makes concurrent attempts race-safe;
+   * the lower(username) unique index enforces availability.
+   */
+  async function changeUsername(
+    id: string,
+    username: string,
+  ): Promise<{ ok: true; username: string } | { ok: false; reason: "ALREADY_CHANGED" | "TAKEN" }> {
+    try {
+      const row = await db
+        .updateTable("user")
+        .set({ username, usernameChangedAt: new Date() })
+        .where("id", "=", id)
+        .where("usernameChangedAt", "is", null)
+        .returning("username")
+        .executeTakeFirst()
+      if (!row) return { ok: false, reason: "ALREADY_CHANGED" }
+      return { ok: true, username: row.username }
+    } catch (error) {
+      if (error instanceof Error && /user_username_lower_key|unique/i.test(error.message)) {
+        return { ok: false, reason: "TAKEN" }
+      }
+      throw error
+    }
+  }
+
   async function suspend(id: string, reason: string | null): Promise<boolean> {
     const result = await db
       .updateTable("user")
@@ -54,5 +81,5 @@ export function crudUser(db: Kysely<DB>) {
     return (result.numUpdatedRows ?? 0n) > 0n
   }
 
-  return { createUser, updateUser, deleteUser, suspend, unsuspend }
+  return { createUser, updateUser, deleteUser, changeUsername, suspend, unsuspend }
 }
