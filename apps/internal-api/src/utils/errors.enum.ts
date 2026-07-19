@@ -19,6 +19,12 @@ export enum ErrorCode {
   // Authentication/Authorization errors
   InsufficientPermissions = "InsufficientPermissions",
   Suspended = "Suspended",
+  NotVerified = "NotVerified",
+
+  // Onboarding errors
+  InviteCodeInvalid = "InviteCodeInvalid",
+  InviteCodeLimitReached = "InviteCodeLimitReached",
+  AlreadySubmitted = "AlreadySubmitted",
 
   // Validation errors
   ValidationFailed = "ValidationFailed",

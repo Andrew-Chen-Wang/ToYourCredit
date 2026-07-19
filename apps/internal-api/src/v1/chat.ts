@@ -12,7 +12,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { type ChatEventType, publishChatEvent } from "../realtime"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
@@ -192,6 +192,7 @@ const app = new Hono()
   )
   .post(
     "/dm",
+    verifiedMiddleware,
     describeRoute({
       description: "Create or reuse a direct message conversation and send the first message",
       responses: {
@@ -278,6 +279,7 @@ const app = new Hono()
   )
   .post(
     "/group",
+    verifiedMiddleware,
     describeRoute({
       description: "Create a group chat and send the first message",
       responses: {
@@ -389,6 +391,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/messages",
+    verifiedMiddleware,
     describeRoute({
       description: "Send a message to a conversation",
       responses: {
@@ -447,6 +450,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/read",
+    verifiedMiddleware,
     describeRoute({
       description: "Mark a conversation as read",
       responses: {
@@ -474,6 +478,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/accept",
+    verifiedMiddleware,
     describeRoute({
       description: "Accept a chat request",
       responses: {
@@ -501,6 +506,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/ignore",
+    verifiedMiddleware,
     describeRoute({
       description: "Ignore a chat request",
       responses: {
@@ -528,6 +534,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/leave",
+    verifiedMiddleware,
     describeRoute({
       description: "Leave a conversation",
       responses: {
@@ -558,6 +565,7 @@ const app = new Hono()
   )
   .post(
     "/:conversationId/hide",
+    verifiedMiddleware,
     describeRoute({
       description: "Hide a conversation until the next message",
       responses: {
@@ -584,6 +592,7 @@ const app = new Hono()
   )
   .patch(
     "/:conversationId",
+    verifiedMiddleware,
     describeRoute({
       description: "Rename a group conversation (host only)",
       responses: {
@@ -621,6 +630,7 @@ const app = new Hono()
   )
   .delete(
     "/:conversationId/participants/:userId",
+    verifiedMiddleware,
     describeRoute({
       description: "Remove a participant from a group conversation (host only)",
       responses: {

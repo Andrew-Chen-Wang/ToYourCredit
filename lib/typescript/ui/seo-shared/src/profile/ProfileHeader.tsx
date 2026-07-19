@@ -18,7 +18,7 @@ export type ProfileHeaderUser = {
 export type ProfileHeaderProps = {
   user: ProfileHeaderUser
   action?: ReactNode
-  /** Extra right-sidebar cards rendered below the Karma card (moderating, social, settings). */
+  /** Extra right-sidebar cards rendered below the Credit card (moderating, social, settings). */
   sidebarExtra?: ReactNode
   /** Main-column content (tabs + feed) rendered beside the profile info card. */
   children?: ReactNode
@@ -68,7 +68,7 @@ export function ProfileHeader({ user, action, sidebarExtra, children }: ProfileH
             <CardContent className="flex flex-col gap-4 pt-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Karma
+                  Credit
                 </p>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-center">
                   <div>

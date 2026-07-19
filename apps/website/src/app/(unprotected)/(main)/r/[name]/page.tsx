@@ -41,7 +41,7 @@ export async function generateMetadata({
   const description =
     community.description.length > 0
       ? community.description
-      : `The r/${community.name} community on ReadIt.`
+      : `The r/${community.name} community on ToYourCredit.`
   return { title, description, openGraph: { title, description } }
 }
 

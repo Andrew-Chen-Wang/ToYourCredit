@@ -4,7 +4,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwForbidden } from "../utils/http-exception"
 import { decodeCursor } from "../utils/pagination"
@@ -27,7 +27,7 @@ function encodeOffset(offset: number): string {
   )
 }
 
-const app = new Hono().use(authMiddleware).get(
+const app = new Hono().use(verifiedMiddleware).get(
   "/:communityId",
   describeRoute({
     description: "Fetch a community's moderation log (moderators)",

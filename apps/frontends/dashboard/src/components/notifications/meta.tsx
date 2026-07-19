@@ -88,7 +88,7 @@ export function describeNotification(n: NotificationItem): string {
         ? `Your request to join ${community} was approved`
         : "Your join request was approved"
     case "welcome":
-      return "Welcome to ReadIt"
+      return "Welcome to ToYourCredit"
     default:
       return n.type.replaceAll("_", " ")
   }
@@ -197,6 +197,6 @@ export const PREFERENCE_TYPES: { type: string; label: string; description: strin
   {
     type: "welcome",
     label: "Welcome & onboarding",
-    description: "Occasional onboarding messages from ReadIt.",
+    description: "Occasional onboarding messages from ToYourCredit.",
   },
 ]

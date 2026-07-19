@@ -9,7 +9,7 @@ import { promoteMediaCleanup } from "@utils/queues"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -58,7 +58,7 @@ const confirmResponse = {
 }
 
 const app = new Hono()
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .post(
     "/confirm",
     describeRoute({

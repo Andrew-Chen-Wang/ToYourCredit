@@ -2,12 +2,14 @@ import { db } from "@template-nextjs/db"
 import { v7 } from "uuid"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { crudPostVote } from "./crud"
+import { fetchPostVote } from "./fetch"
 
 declare const process: { env: Record<string, string | undefined> }
 
 const suffix = v7().slice(0, 8)
 const authorId = v7()
 const voterId = v7()
+const secondVoterId = v7()
 const communityId = v7()
 const postId = v7()
 
@@ -29,12 +31,28 @@ async function counts(): Promise<{ ups: number; downs: number }> {
   return { ups: row.ups, downs: row.downs }
 }
 
+async function reasonRows(userId: string): Promise<string[]> {
+  const rows = await db
+    .selectFrom("postVoteReason")
+    .select("category")
+    .where("postId", "=", postId)
+    .where("userId", "=", userId)
+    .orderBy("category")
+    .execute()
+  return rows.map((r) => r.category)
+}
+
 beforeAll(async () => {
   await db
     .insertInto("user")
     .values([
       { id: authorId, username: `vote-author-${suffix}`, email: `va-${suffix}@example.invalid` },
       { id: voterId, username: `vote-voter-${suffix}`, email: `vv-${suffix}@example.invalid` },
+      {
+        id: secondVoterId,
+        username: `vote-voter2-${suffix}`,
+        email: `vw-${suffix}@example.invalid`,
+      },
     ])
     .execute()
 
@@ -66,28 +84,121 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.deleteFrom("post").where("id", "=", postId).execute()
   await db.deleteFrom("community").where("id", "=", communityId).execute()
-  await db.deleteFrom("user").where("id", "in", [authorId, voterId]).execute()
+  await db.deleteFrom("user").where("id", "in", [authorId, voterId, secondVoterId]).execute()
   await db.destroy()
 })
 
 describe.skipIf(process.env.CI === "true")("crudPostVote.setVote transitions", () => {
-  it("none -> upvote increments ups, score, and author karma", async () => {
-    const result = await crudPostVote(db).setVote(postId, voterId, 1)
-    expect(result).toEqual({ ups: 1, downs: 0, score: 1, userVote: 1 })
+  it("none -> credit increments ups, score, and author karma", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "credit",
+      active: true,
+    })
+    expect(result).toEqual({
+      ups: 1,
+      downs: 0,
+      score: 1,
+      userVote: 1,
+      myDownvoteCategories: [],
+    })
     expect(await counts()).toEqual({ ups: 1, downs: 0 })
     expect(await authorKarma()).toBe(1)
   })
 
-  it("upvote -> downvote swings counts and karma by two", async () => {
-    const result = await crudPostVote(db).setVote(postId, voterId, -1)
-    expect(result).toEqual({ ups: 0, downs: 1, score: -1, userVote: -1 })
+  it("credit -> categorized downvote swings counts by two and stores reasons", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "down",
+      categories: ["bad_source", "trolling"],
+    })
+    expect(result).toEqual({
+      ups: 0,
+      downs: 1,
+      score: -1,
+      userVote: -1,
+      myDownvoteCategories: ["bad_source", "trolling"],
+    })
     expect(await counts()).toEqual({ ups: 0, downs: 1 })
     expect(await authorKarma()).toBe(-1)
+    expect(await reasonRows(voterId)).toEqual(["bad_source", "trolling"])
   })
 
-  it("downvote -> clear resets counts and karma", async () => {
-    const result = await crudPostVote(db).setVote(postId, voterId, 0)
-    expect(result).toEqual({ ups: 0, downs: 0, score: 0, userVote: 0 })
+  it("multiple categories from one user still count as a single downvote", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "down",
+      categories: ["bad_source", "trolling", "inflammatory"],
+    })
+    expect(result?.downs).toBe(1)
+    expect(await reasonRows(voterId)).toEqual(["bad_source", "inflammatory", "trolling"])
+  })
+
+  it("removing a category keeps the downvote; total unchanged", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "down",
+      categories: ["trolling"],
+    })
+    expect(result?.downs).toBe(1)
+    expect(result?.myDownvoteCategories).toEqual(["trolling"])
+    expect(await reasonRows(voterId)).toEqual(["trolling"])
+  })
+
+  it("a second downvoter increments the distinct-user total", async () => {
+    const result = await crudPostVote(db).setVote(postId, secondVoterId, {
+      type: "down",
+      categories: ["off_topic"],
+    })
+    expect(result?.downs).toBe(2)
+    const summary = await fetchPostVote(db).getCategoryCounts(postId)
+    expect(summary).toEqual({ trolling: 1, off_topic: 1 })
+  })
+
+  it("clearing credit does not cancel an active downvote", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "credit",
+      active: false,
+    })
+    expect(result?.userVote).toBe(-1)
+    expect(result?.downs).toBe(2)
+    expect(await reasonRows(voterId)).toEqual(["trolling"])
+  })
+
+  it("downvote -> credit removes reason rows explicitly", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "credit",
+      active: true,
+    })
+    expect(result?.userVote).toBe(1)
+    expect(result?.ups).toBe(1)
+    expect(result?.downs).toBe(1)
+    expect(await reasonRows(voterId)).toEqual([])
+  })
+
+  it("empty category set clears the downvote and cascades reasons", async () => {
+    const result = await crudPostVote(db).setVote(postId, secondVoterId, {
+      type: "down",
+      categories: [],
+    })
+    expect(result).toEqual({
+      ups: 1,
+      downs: 0,
+      score: 1,
+      userVote: 0,
+      myDownvoteCategories: [],
+    })
+    expect(await reasonRows(secondVoterId)).toEqual([])
+  })
+
+  it("credit -> clear resets counts and karma", async () => {
+    const result = await crudPostVote(db).setVote(postId, voterId, {
+      type: "credit",
+      active: false,
+    })
+    expect(result).toEqual({
+      ups: 0,
+      downs: 0,
+      score: 0,
+      userVote: 0,
+      myDownvoteCategories: [],
+    })
     expect(await counts()).toEqual({ ups: 0, downs: 0 })
     expect(await authorKarma()).toBe(0)
 
@@ -98,5 +209,25 @@ describe.skipIf(process.env.CI === "true")("crudPostVote.setVote transitions", (
       .where("userId", "=", voterId)
       .executeTakeFirst()
     expect(vote).toBeUndefined()
+  })
+
+  it("voter lists expose upvoters and per-category downvoters", async () => {
+    await crudPostVote(db).setVote(postId, voterId, { type: "credit", active: true })
+    await crudPostVote(db).setVote(postId, secondVoterId, {
+      type: "down",
+      categories: ["bad_source"],
+    })
+
+    const upvoters = await fetchPostVote(db).listUpvoters(postId, 10)
+    expect(upvoters.voters.map((v) => v.userId)).toEqual([voterId])
+
+    const downvoters = await fetchPostVote(db).listDownvoters(postId, 10)
+    expect(downvoters.voters.map((v) => v.userId)).toEqual([secondVoterId])
+
+    const byCategory = await fetchPostVote(db).listDownvoters(postId, 10, "bad_source")
+    expect(byCategory.voters.map((v) => v.userId)).toEqual([secondVoterId])
+
+    const other = await fetchPostVote(db).listDownvoters(postId, 10, "trolling")
+    expect(other.voters).toEqual([])
   })
 })

@@ -8,7 +8,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -46,6 +46,7 @@ const app = new Hono()
   )
   .put(
     "/:username",
+    verifiedMiddleware,
     describeRoute({
       description: "Follow a user's profile",
       responses: {
@@ -91,6 +92,7 @@ const app = new Hono()
   )
   .delete(
     "/:username",
+    verifiedMiddleware,
     describeRoute({
       description: "Unfollow a user's profile",
       responses: {

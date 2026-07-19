@@ -23,13 +23,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@ui/base/ui/avatar"
 import { Markdown } from "@ui/seo-shared/Markdown"
 import { RelativeTime } from "@ui/seo-shared/RelativeTime"
-import { PostRow, type PostRowPost } from "@ui/seo-shared/post/PostRow"
+import type { PostRowPost } from "@ui/seo-shared/post/PostRow"
 import { CommunityIcon } from "@ui/seo-shared/community/CommunityIcon"
 import { SeoLink } from "@ui/seo-shared/_internal/seo-link"
 import {
   ModInsightsRail,
   type ModCommunity,
 } from "@frontends/dashboard/components/mod/ModInsightsRail"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { mediaUrl } from "@frontends/dashboard/lib/mediaUrl"
 import {
   getApiV1ModQueueByCommunityId,
@@ -301,7 +306,7 @@ function QueueRow({
   name: string
   reasons: RemovalReason[]
   view: ViewMode
-  onVote: (postId: string, direction: 1 | -1) => void
+  onVote: (postId: string, input: VoteInput) => void
   onApprove: () => void
   onRemove: (args: { removalReasonId: string | null; asSpam: boolean }) => void
   onToggleLock: (locked: boolean) => void
@@ -317,17 +322,15 @@ function QueueRow({
     <div className="flex flex-col gap-2 border-b py-3 last:border-b-0">
       <ReportChips item={item} />
       {isPost && post ? (
-        <PostRow
+        <VotablePostRow
           post={toPostRowPost(post)}
           variant={view}
           href={`/r/${communityName}/comments/${post.id}`}
           communityHref={`/r/${communityName}`}
           authorHref={post.author ? `/user/${post.author.username}` : undefined}
-          onUpvote={() => {
-            onVote(post.id, 1)
-          }}
-          onDownvote={() => {
-            onVote(post.id, -1)
+          ups={post.ups}
+          onCastVote={(input) => {
+            onVote(post.id, input)
           }}
           showCommunity
         />
@@ -508,9 +511,9 @@ function QueueTabPanel({
     sticky.isPending ||
     stickyComment.isPending
 
-  function vote(postId: string, direction: 1 | -1) {
+  function vote(postId: string, input: VoteInput) {
     const key = `post:${postId}`
-    let targetValue: 1 | 0 | -1 = direction
+    const next = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<QueuePage>>(queryKey, (old) =>
       old
         ? {
@@ -520,8 +523,6 @@ function QueueTabPanel({
               data: p.data.map((it) => {
                 if (itemKey(it) !== key || !it.post) return it
                 const prev = it.post.userVote
-                const next = prev === direction ? 0 : direction
-                targetValue = next
                 return {
                   ...it,
                   post: { ...it.post, userVote: next, score: it.post.score - prev + next },
@@ -533,7 +534,7 @@ function QueueTabPanel({
     )
     void putApiV1PostVoteByPostId({
       path: { postId },
-      body: { value: targetValue },
+      body: input,
       throwOnError: true,
     }).catch(() => {
       void query.refetch()

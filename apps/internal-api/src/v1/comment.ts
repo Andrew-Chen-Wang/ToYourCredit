@@ -12,7 +12,7 @@ import { enqueueEsSyncComment } from "@utils/queues"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware, authNoThrowMiddleware } from "../middleware"
+import { verifiedMiddleware, authNoThrowMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
 import { decodeCursor } from "../utils/pagination"
 import {
@@ -127,7 +127,7 @@ const app = new Hono()
       return c.json({ data, ancestors: [], nextCursor })
     },
   )
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .post(
     "/",
     describeRoute({
@@ -204,7 +204,10 @@ const app = new Hono()
         return throwBadRequest(c, "Comment is nested too deeply")
       }
 
-      await crudCommentVote(db).setVote(result.comment.id, user.id, 1)
+      await crudCommentVote(db).setVote(result.comment.id, user.id, {
+        type: "credit",
+        active: true,
+      })
 
       await enqueueEsSyncComment(result.comment.id)
 

@@ -25,6 +25,7 @@ import {
   getApiV1CommunityMemberModeratedOptions,
   getApiV1CustomFeedMineOptions,
   getApiV1HistoryRecentCommunitiesOptions,
+  getApiV1AuthMeOptions,
   getApiV1ModTeamMyInvitesOptions,
   getApiV1UserMeOptions,
   patchApiV1CommunityMemberByCommunityIdMembershipMutation,
@@ -43,6 +44,7 @@ import {
   ShieldCheck,
   Star,
   TrendingUp,
+  UserPlus,
   X,
 } from "lucide-react"
 import { useState } from "react"
@@ -406,6 +408,8 @@ export function AppSidebar() {
   const { data: moderated } = useQuery(getApiV1CommunityMemberModeratedOptions())
   const { data: recent } = useQuery(getApiV1HistoryRecentCommunitiesOptions())
   const { data: invites } = useQuery(getApiV1ModTeamMyInvitesOptions())
+  const { data: me } = useQuery(getApiV1AuthMeOptions())
+  const isVerified = me?.user?.verificationStatus === "verified" || me?.user?.isAdmin === true
 
   const joined = ((mine?.data ?? []) as JoinedCommunity[]).toSorted((a, b) => {
     if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1
@@ -435,6 +439,19 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isVerified ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link to="/referrals" />}
+                    tooltip="Referrals"
+                    isActive={pathname === "/referrals"}
+                    className={MENU_ROW_CLASS}
+                  >
+                    <UserPlus />
+                    <span>Referrals</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -572,7 +589,7 @@ export function AppSidebar() {
                   render={
                     // oxlint-disable-next-line no-html-link-for-pages -- /about is a Next.js page outside the SPA router
                     <a href="/about">
-                      <span>About ReadIt</span>
+                      <span>About ToYourCredit</span>
                     </a>
                   }
                 />
@@ -583,7 +600,7 @@ export function AppSidebar() {
                   render={
                     // oxlint-disable-next-line no-html-link-for-pages -- /rules is a Next.js page outside the SPA router
                     <a href="/rules">
-                      <span>ReadIt Rules</span>
+                      <span>ToYourCredit Rules</span>
                     </a>
                   }
                 />

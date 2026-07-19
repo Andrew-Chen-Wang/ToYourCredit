@@ -11,7 +11,10 @@ import type { Selectable } from "kysely"
 import { ErrorCode } from "./utils/errors.enum"
 import { throwHTTPException } from "./utils/http-exception"
 
-type SessionUser = Pick<Selectable<DB["user"]>, "id" | "isAdmin" | "name" | "email" | "suspendedAt">
+type SessionUser = Pick<
+  Selectable<DB["user"]>,
+  "id" | "isAdmin" | "name" | "email" | "suspendedAt" | "verificationStatus"
+>
 
 export async function getSession(
   c:
@@ -50,6 +53,33 @@ export const authMiddleware = createMiddleware<{
   const session = await getSession(c)
   c.set("user", session.user)
   c.set("session", session.session)
+
+  await next()
+})
+
+/**
+ * Like authMiddleware, but additionally requires the account to have completed
+ * onboarding (verification_status = 'verified'). Unverified users may only
+ * read and save content; every other write goes through this middleware.
+ */
+export const verifiedMiddleware = createMiddleware<{
+  Variables: {
+    user: SessionUser
+    session: Selectable<DB["session"]>
+  }
+}>(async (c, next) => {
+  // Reuse the session when chained after authMiddleware to avoid a second lookup.
+  const existingUser = c.var.user as SessionUser | undefined
+  const existingSession = c.var.session as Selectable<DB["session"]> | undefined
+  const { user, session } =
+    existingUser && existingSession
+      ? { user: existingUser, session: existingSession }
+      : await getSession(c)
+  if (user.verificationStatus !== "verified" && !user.isAdmin) {
+    throwHTTPException(403, ErrorCode.NotVerified, "Account not verified")
+  }
+  c.set("user", user)
+  c.set("session", session)
 
   await next()
 })

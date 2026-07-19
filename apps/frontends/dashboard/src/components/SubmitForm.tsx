@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { cn } from "@ui/base/lib/utils"
-import { Button } from "@ui/base/ui/button"
+import { Button, buttonVariants } from "@ui/base/ui/button"
 import { Input } from "@ui/base/ui/input"
 import { Label } from "@ui/base/ui/label"
 import { LoadingButton } from "@ui/base/ui/loading-button"
 import { Popover, PopoverContent, PopoverTrigger } from "@ui/base/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ui/base/ui/select"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@ui/base/ui/command"
 import { Switch } from "@ui/base/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@ui/base/ui/tabs"
 import { CommunityIcon } from "@ui/seo-shared/community/CommunityIcon"
@@ -15,12 +22,14 @@ import { MarkdownEditor } from "@ui/spa-shared/MarkdownEditor"
 import {
   getApiV1CommunityMemberMineOptions,
   getApiV1DraftOptions,
+  getApiV1UserMeOptions,
   getApiV1FlairByCommunityIdPostTemplatesOptions,
   postApiV1DraftMutation,
   postApiV1PostMutation,
 } from "@lib/api-client/generated/@tanstack/react-query.gen"
 import {
   deleteApiV1DraftById,
+  getApiV1SearchSuggest,
   postApiV1MediaConfirm,
   postApiV1Post,
 } from "@lib/api-client/generated/sdk.gen"
@@ -35,6 +44,8 @@ import {
   type MediaDraft,
 } from "@frontends/dashboard/lib/mediaUpload"
 import {
+  ChevronsUpDown,
+  CircleUser,
   Clock,
   Film,
   FileText,
@@ -246,12 +257,28 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
     enabled: !fixedCommunity,
   })
 
-  const [pickedId, setPickedId] = useState<string | null>(null)
+  const { data: me } = useQuery({ ...getApiV1UserMeOptions(), enabled: !fixedCommunity })
+  const [picked, setPicked] = useState<
+    { kind: "profile" } | { kind: "community"; community: SubmitFormCommunity } | null
+  >(null)
   const communities = mine?.data ?? []
-  const picked = communities.find((c) => c.id === pickedId)
   const community: SubmitFormCommunity | undefined =
-    fixedCommunity ??
-    (picked ? { id: picked.id, name: picked.name, displayName: picked.displayName } : undefined)
+    fixedCommunity ?? (picked?.kind === "community" ? picked.community : undefined)
+  const isProfilePost = !fixedCommunity && picked?.kind === "profile"
+
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerQuery, setPickerQuery] = useState("")
+  const { data: suggest } = useQuery({
+    queryKey: ["submit-community-suggest", pickerQuery],
+    queryFn: () =>
+      getApiV1SearchSuggest({ query: { q: pickerQuery }, throwOnError: true }).then((r) => r.data),
+    enabled: pickerQuery.trim().length >= 2,
+  })
+  const joinedFiltered = communities.filter((c) =>
+    c.name.toLowerCase().includes(pickerQuery.trim().toLowerCase()),
+  )
+  const joinedIds = new Set(communities.map((c) => c.id))
+  const searched = (suggest?.communities ?? []).filter((c) => !joinedIds.has(c.id))
 
   const [type, setType] = useState<PostType>("text")
   const [title, setTitle] = useState("")
@@ -279,7 +306,15 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
     setIsSpoiler(draft.isSpoiler)
     setIsOc(draft.isOc)
     setFlairTemplateId(draft.flairTemplateId)
-    if (!fixedCommunity && draft.communityId) setPickedId(draft.communityId)
+    if (!fixedCommunity && draft.communityId) {
+      const match = communities.find((c) => c.id === draft.communityId)
+      if (match) {
+        setPicked({
+          kind: "community",
+          community: { id: match.id, name: match.name, displayName: match.displayName },
+        })
+      }
+    }
     setLoadedDraftId(draft.id)
     toast.success("Draft loaded")
   }
@@ -371,6 +406,8 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
           to: "/r/$name/comments/$",
           params: { name: community.name, _splat: result.id },
         })
+      } else if (me) {
+        void navigate({ to: "/user/$username", params: { username: me.username } })
       }
     },
     onError: () => {
@@ -382,15 +419,15 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
   const linkValid = type === "link" ? isValidHttpUrl(linkUrl) : true
   const mediaValid = type === "media" ? mediaDrafts.length > 0 : true
   const busy = createPost.isPending || uploading
-  const canSubmit = !!community && titleValid && linkValid && mediaValid && !busy
+  const canSubmit = (!!community || isProfilePost) && titleValid && linkValid && mediaValid && !busy
 
   async function submitMedia() {
-    if (!community) return
+    if (!community && !isProfilePost) return
     setUploading(true)
     try {
       const { data } = await postApiV1Post({
         body: {
-          communityId: community.id,
+          communityId: community?.id,
           type: "media",
           title: title.trim(),
           media: mediaDrafts.map((m) => ({
@@ -428,10 +465,14 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
 
       await postApiV1MediaConfirm({ body: { postId: data.id }, throwOnError: true })
       clearLoadedDraft()
-      void navigate({
-        to: "/r/$name/comments/$",
-        params: { name: community.name, _splat: data.id },
-      })
+      if (community) {
+        void navigate({
+          to: "/r/$name/comments/$",
+          params: { name: community.name, _splat: data.id },
+        })
+      } else if (me) {
+        void navigate({ to: "/user/$username", params: { username: me.username } })
+      }
     } catch {
       toast.error("Could not upload media", {
         description: "One or more files failed to upload. Please try again.",
@@ -441,14 +482,14 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
   }
 
   function submit() {
-    if (!community) return
+    if (!community && !isProfilePost) return
     if (type === "media") {
       void submitMedia()
       return
     }
     createPost.mutate({
       body: {
-        communityId: community.id,
+        communityId: community?.id,
         type,
         title: title.trim(),
         bodyMd: type === "text" ? bodyMd : undefined,
@@ -467,7 +508,7 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
     saveDraft.mutate({
       body: {
         communityId: community?.id ?? null,
-        isProfile: false,
+        isProfile: isProfilePost,
         type,
         title: title.trim() || null,
         bodyMd: type === "text" ? bodyMd : null,
@@ -525,19 +566,105 @@ export function SubmitForm({ fixedCommunity }: SubmitFormProps) {
         </div>
       ) : (
         <div className="mb-4">
-          <Label className="mb-1.5 block">Community</Label>
-          <Select value={pickedId ?? ""} onValueChange={setPickedId}>
-            <SelectTrigger className="w-full sm:w-72">
-              <SelectValue placeholder="Choose a community" />
-            </SelectTrigger>
-            <SelectContent>
-              {communities.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  r/{c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className="mb-1.5 block">Post to</Label>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "w-full justify-between sm:w-72",
+              )}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                {isProfilePost ? (
+                  <>
+                    <CircleUser className="size-4 shrink-0" />
+                    <span className="truncate">u/{me?.username ?? "you"} — Your profile</span>
+                  </>
+                ) : community ? (
+                  <>
+                    <CommunityIcon name={community.name} size="sm" />
+                    <span className="truncate">r/{community.name}</span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Choose a community</span>
+                )}
+              </span>
+              <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-0">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder="Search communities"
+                  value={pickerQuery}
+                  onValueChange={setPickerQuery}
+                />
+                <CommandList>
+                  <CommandEmpty>No communities found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="__profile__"
+                      onSelect={() => {
+                        setPicked({ kind: "profile" })
+                        setFlairTemplateId(null)
+                        setPickerOpen(false)
+                      }}
+                    >
+                      <CircleUser className="size-4" />
+                      <span className="flex flex-col">
+                        <span>u/{me?.username ?? "you"}</span>
+                        <span className="text-xs text-muted-foreground">Your profile</span>
+                      </span>
+                    </CommandItem>
+                  </CommandGroup>
+                  {joinedFiltered.length > 0 ? (
+                    <CommandGroup heading="Joined">
+                      {joinedFiltered.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.id}
+                          onSelect={() => {
+                            setPicked({
+                              kind: "community",
+                              community: { id: c.id, name: c.name, displayName: c.displayName },
+                            })
+                            setPickerOpen(false)
+                          }}
+                        >
+                          <CommunityIcon name={c.name} size="sm" />
+                          r/{c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : null}
+                  {searched.length > 0 ? (
+                    <CommandGroup heading="More communities">
+                      {searched.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.id}
+                          onSelect={() => {
+                            setPicked({
+                              kind: "community",
+                              community: { id: c.id, name: c.name, displayName: c.displayName },
+                            })
+                            setPickerOpen(false)
+                          }}
+                        >
+                          <CommunityIcon name={c.name} size="sm" />
+                          r/{c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : null}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {isProfilePost ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              This post will appear on your profile's overview.
+            </p>
+          ) : null}
         </div>
       )}
 

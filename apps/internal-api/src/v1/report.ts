@@ -7,7 +7,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwNotFound } from "../utils/http-exception"
 import {
@@ -18,7 +18,7 @@ import {
 } from "./report.serializer"
 
 const app = new Hono()
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .post(
     "/post/:postId",
     describeRoute({

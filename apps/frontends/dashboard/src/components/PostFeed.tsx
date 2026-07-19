@@ -15,7 +15,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@ui/base/ui/dropdown-menu"
-import { PostRow, type PostRowPost } from "@ui/seo-shared/post/PostRow"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
+import type { PostRowPost } from "@ui/seo-shared/post/PostRow"
 import { PostFeedSkeleton } from "@ui/seo-shared/post/PostRowSkeleton"
 import { PostActionsMenu } from "@frontends/dashboard/components/PostActionsMenu"
 import { PostShareMenu } from "@frontends/dashboard/components/PostShareMenu"
@@ -193,11 +198,6 @@ function feedQueryKey(source: FeedSource, sort: string, t: TopWindow): unknown[]
   return [...base, sort, t]
 }
 
-function nextVoteValue(current: number, direction: 1 | -1): 1 | 0 | -1 {
-  if (direction === 1) return current === 1 ? 0 : 1
-  return current === -1 ? 0 : -1
-}
-
 /** Optimistically applies a vote to every page of the cached feed. */
 function applyVoteToCache(
   data: InfiniteData<FeedPage> | undefined,
@@ -282,10 +282,10 @@ export function PostFeed({
   })
 
   const voteMutation = useMutation({
-    mutationFn: (vars: { postId: string; value: 1 | 0 | -1 }) =>
+    mutationFn: (vars: { postId: string; input: VoteInput }) =>
       putApiV1PostVoteByPostId({
         path: { postId: vars.postId },
-        body: { value: vars.value },
+        body: vars.input,
         throwOnError: true,
       }),
     onError: () => {
@@ -294,12 +294,12 @@ export function PostFeed({
     },
   })
 
-  function vote(post: FeedPost, direction: 1 | -1) {
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(post: FeedPost, input: VoteInput) {
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<FeedPage>>(queryKey, (old) =>
       applyVoteToCache(old, post.id, newVote),
     )
-    voteMutation.mutate({ postId: post.id, value: newVote })
+    voteMutation.mutate({ postId: post.id, input })
   }
 
   function setViewMode(next: ViewMode) {
@@ -448,7 +448,7 @@ export function PostFeed({
       ) : (
         <div className={view === "compact" ? "overflow-hidden rounded-lg border" : "flex flex-col"}>
           {posts.map((post) => (
-            <PostRow
+            <VotablePostRow
               key={post.id}
               post={toDisplayPost(post)}
               variant={view}
@@ -458,11 +458,9 @@ export function PostFeed({
               showCommunity={showCommunity}
               wrapCommunityLink={wrapCommunityLink}
               wrapAuthorLink={wrapAuthorLink}
-              onUpvote={() => {
-                vote(post, 1)
-              }}
-              onDownvote={() => {
-                vote(post, -1)
+              ups={post.ups}
+              onCastVote={(input) => {
+                castVote(post, input)
               }}
               voteDisabled={post.isLocked}
               joinSlot={

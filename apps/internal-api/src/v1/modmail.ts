@@ -10,7 +10,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -58,6 +58,7 @@ const app = new Hono()
   .use(authMiddleware)
   .post(
     "/",
+    verifiedMiddleware,
     describeRoute({
       description: "Start a modmail conversation with a community's mods",
       responses: {
@@ -236,6 +237,7 @@ const app = new Hono()
   )
   .post(
     "/:id/messages",
+    verifiedMiddleware,
     describeRoute({
       description: "Reply to a modmail conversation or add an internal note (notes are mods only)",
       responses: {
@@ -299,6 +301,7 @@ const app = new Hono()
   )
   .post(
     "/:id/archive",
+    verifiedMiddleware,
     describeRoute({
       description: "Archive a modmail conversation (mods)",
       responses: {
@@ -334,6 +337,7 @@ const app = new Hono()
   )
   .post(
     "/:id/unarchive",
+    verifiedMiddleware,
     describeRoute({
       description: "Move an archived modmail conversation back to in progress (mods)",
       responses: {
@@ -369,6 +373,7 @@ const app = new Hono()
   )
   .post(
     "/:id/highlight",
+    verifiedMiddleware,
     describeRoute({
       description: "Toggle the highlight flag on a modmail conversation (mods)",
       responses: {

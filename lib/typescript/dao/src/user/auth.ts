@@ -3,7 +3,7 @@ import type { Kysely, Selectable } from "kysely"
 
 export type SessionUser = Pick<
   Selectable<DB["user"]>,
-  "id" | "isAdmin" | "name" | "email" | "suspendedAt"
+  "id" | "isAdmin" | "name" | "email" | "suspendedAt" | "verificationStatus"
 >
 
 type SessionValidationResult = {
@@ -26,6 +26,7 @@ export function authUser(db: Kysely<DB>) {
         "user.name",
         "user.email",
         "user.suspendedAt",
+        "user.verificationStatus",
       ])
       .executeTakeFirst()
 
@@ -43,6 +44,7 @@ export function authUser(db: Kysely<DB>) {
       name: row.name,
       email: row.email,
       suspendedAt: row.suspendedAt,
+      verificationStatus: row.verificationStatus,
     }
     if (Date.now() >= session.expires.getTime()) {
       await db.deleteFrom("session").where("sessionKey", "=", session.sessionKey).execute()

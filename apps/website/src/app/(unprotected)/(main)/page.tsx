@@ -22,7 +22,7 @@ export default async function HomeLanding({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
-      <h1 className="mb-3 text-2xl font-bold">Popular on ReadIt</h1>
+      <h1 className="mb-3 text-2xl font-bold">Popular on ToYourCredit</h1>
       <div className="mb-3">
         <FeedSortTabs basePath="/" current={sort} sorts={POPULAR_SORTS} t={t} />
       </div>

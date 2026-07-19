@@ -8,7 +8,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwNotFound } from "../utils/http-exception"
 import {
@@ -81,6 +81,7 @@ const app = new Hono()
   )
   .put(
     "/hide/:postId",
+    verifiedMiddleware,
     describeRoute({
       description: "Hide a post from the current user's feeds",
       responses: {
@@ -106,6 +107,7 @@ const app = new Hono()
   )
   .delete(
     "/hide/:postId",
+    verifiedMiddleware,
     describeRoute({
       description: "Unhide a post",
       responses: {
@@ -125,6 +127,7 @@ const app = new Hono()
   )
   .put(
     "/follow/:postId",
+    verifiedMiddleware,
     describeRoute({
       description: "Follow a post to receive updates",
       responses: {
@@ -150,6 +153,7 @@ const app = new Hono()
   )
   .delete(
     "/follow/:postId",
+    verifiedMiddleware,
     describeRoute({
       description: "Unfollow a post",
       responses: {
@@ -169,6 +173,7 @@ const app = new Hono()
   )
   .post(
     "/share/:postId",
+    verifiedMiddleware,
     describeRoute({
       description: "Record a share of a post",
       responses: {

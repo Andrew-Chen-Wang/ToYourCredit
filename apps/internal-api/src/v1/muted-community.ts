@@ -5,7 +5,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwNotFound } from "../utils/http-exception"
 import {
@@ -45,6 +45,7 @@ const app = new Hono()
   )
   .put(
     "/:communityId",
+    verifiedMiddleware,
     describeRoute({
       description: "Mute a community",
       responses: {
@@ -84,6 +85,7 @@ const app = new Hono()
   )
   .delete(
     "/:communityId",
+    verifiedMiddleware,
     describeRoute({
       description: "Unmute a community",
       responses: {

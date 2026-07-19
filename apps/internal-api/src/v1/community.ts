@@ -11,7 +11,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware, authNoThrowMiddleware } from "../middleware"
+import { verifiedMiddleware, authNoThrowMiddleware } from "../middleware"
 import { ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
 import { ErrorCode } from "../utils/errors.enum"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
@@ -190,7 +190,7 @@ const app = new Hono()
       })
     },
   )
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .get(
     "/:id/settings",
     describeRoute({

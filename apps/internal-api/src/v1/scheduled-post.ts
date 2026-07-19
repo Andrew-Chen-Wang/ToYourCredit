@@ -12,7 +12,7 @@ import { Hono } from "hono"
 import type { Selectable } from "kysely"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -93,6 +93,7 @@ const app = new Hono()
   )
   .post(
     "/",
+    verifiedMiddleware,
     describeRoute({
       description: "Schedule a post for future publication",
       responses: {
@@ -162,6 +163,7 @@ const app = new Hono()
   )
   .delete(
     "/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Cancel a scheduled post",
       responses: {

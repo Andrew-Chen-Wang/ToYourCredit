@@ -6,7 +6,7 @@ import type { DB } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwNotFound } from "../utils/http-exception"
 import {
@@ -63,6 +63,7 @@ const app = new Hono()
   )
   .post(
     "/",
+    verifiedMiddleware,
     describeRoute({
       description: "Create a draft",
       responses: {
@@ -136,6 +137,7 @@ const app = new Hono()
   )
   .patch(
     "/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Update a draft",
       responses: {
@@ -164,6 +166,7 @@ const app = new Hono()
   )
   .delete(
     "/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Delete a draft",
       responses: {

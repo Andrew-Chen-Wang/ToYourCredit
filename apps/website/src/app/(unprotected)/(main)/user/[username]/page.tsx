@@ -19,7 +19,8 @@ export async function generateMetadata({
     return { title: "User not found" }
   }
   const title = `${user.displayName ?? `u/${user.username}`} (u/${user.username})`
-  const description = user.about ?? `See posts and comments from u/${user.username} on ReadIt.`
+  const description =
+    user.about ?? `See posts and comments from u/${user.username} on ToYourCredit.`
   return {
     title,
     description,

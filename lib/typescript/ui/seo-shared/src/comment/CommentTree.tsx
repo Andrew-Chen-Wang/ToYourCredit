@@ -1,12 +1,12 @@
 "use client"
 
-import { Fragment, type ReactNode, useState } from "react"
+import { Fragment, type ComponentType, type ReactNode, useState } from "react"
 import { ArrowRight, MessageSquare } from "lucide-react"
 import { cn } from "@ui/base/lib/utils"
 import { Button } from "@ui/base/ui/button"
 import { Spinner } from "@ui/base/ui/spinner"
 import { SeoLink } from "@ui/seo-shared/_internal/seo-link"
-import { CommentNodeView } from "@ui/seo-shared/comment/CommentNodeView"
+import { CommentNodeView, type CommentNodeViewProps } from "@ui/seo-shared/comment/CommentNodeView"
 import {
   type CommentNode,
   type CommentTreeNode,
@@ -38,6 +38,12 @@ export type CommentTreeCallbacks = {
   /** Host-controlled inline edit composer (replaces this node's body). */
   editingId?: string | null
   renderEditComposer?: (node: CommentNode) => ReactNode
+  /**
+   * Replace CommentNodeView with a wrapper component (must render
+   * CommentNodeView itself). Lets the SPA attach per-node hook state — the
+   * credit/categorized downvote extras — without CommentTree knowing about them.
+   */
+  NodeView?: ComponentType<CommentNodeViewProps>
 }
 
 export type CommentTreeProps = {
@@ -79,6 +85,7 @@ export function CommentTree({
   className,
 }: CommentTreeProps) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set())
+  const NodeView = callbacks.NodeView ?? CommentNodeView
   // Id of the comment whose thread line is currently hovered. All connector
   // segments belonging to that comment (its own stub + every child gutter)
   // highlight together, matching Reddit's whole-line hover.
@@ -117,7 +124,7 @@ export function CommentTree({
 
     const main = (
       <div className={cn("min-w-0 flex-1", visualDepth > 0 && "pt-2")}>
-        <CommentNodeView
+        <NodeView
           node={node}
           authorHref={
             node.author && callbacks.buildAuthorHref

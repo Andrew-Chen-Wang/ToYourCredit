@@ -33,16 +33,14 @@ export const commentVoteSchemaParam = Type.Object({
   commentId: UUID7String,
 })
 
-export const commentVoteSchemaRequest = Type.Object({
-  value: Type.Union([Type.Literal(-1), Type.Literal(0), Type.Literal(1)]),
-})
-
-export const commentVoteSchemaResponse = Type.Object({
-  ups: Type.Number(),
-  downs: Type.Number(),
-  score: Type.Number(),
-  userVote: Type.Number(),
-})
+export {
+  downvoteSummarySchemaResponse as commentVoteSummarySchemaResponse,
+  downvoterListSchemaQuery as commentDownvoterListSchemaQuery,
+  voteSchemaRequest as commentVoteSchemaRequest,
+  voteSchemaResponse as commentVoteSchemaResponse,
+  voterListSchemaQuery as commentVoterListSchemaQuery,
+  voterListSchemaResponse as commentVoterListSchemaResponse,
+} from "./vote-shared.serializer"
 
 export const commentCreateSchemaResponse = Type.Object({
   id: UUID7String,

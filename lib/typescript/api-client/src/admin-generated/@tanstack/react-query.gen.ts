@@ -10,22 +10,33 @@ import {
 
 import { client } from "../client.gen"
 import {
+  getApiAdminOnboarding,
   getApiAdminPosts,
   getApiAdminStats,
   getApiAdminUsers,
   type Options,
+  postApiAdminOnboardingByIdApprove,
+  postApiAdminOnboardingByIdReject,
   postApiAdminPostsByIdRemove,
   postApiAdminPostsByIdRestore,
   postApiAdminUsersByIdSuspend,
   postApiAdminUsersByIdUnsuspend,
 } from "../sdk.gen"
 import type {
+  GetApiAdminOnboardingData,
+  GetApiAdminOnboardingResponse,
   GetApiAdminPostsData,
   GetApiAdminPostsResponse,
   GetApiAdminStatsData,
   GetApiAdminStatsResponse,
   GetApiAdminUsersData,
   GetApiAdminUsersResponse,
+  PostApiAdminOnboardingByIdApproveData,
+  PostApiAdminOnboardingByIdApproveError,
+  PostApiAdminOnboardingByIdApproveResponse,
+  PostApiAdminOnboardingByIdRejectData,
+  PostApiAdminOnboardingByIdRejectError,
+  PostApiAdminOnboardingByIdRejectResponse,
   PostApiAdminPostsByIdRemoveData,
   PostApiAdminPostsByIdRemoveError,
   PostApiAdminPostsByIdRemoveResponse,
@@ -385,3 +396,131 @@ export const getApiAdminStatsOptions = (options?: Options<GetApiAdminStatsData>)
     },
     queryKey: getApiAdminStatsQueryKey(options),
   })
+
+export const getApiAdminOnboardingQueryKey = (options?: Options<GetApiAdminOnboardingData>) =>
+  createQueryKey("getApiAdminOnboarding", options)
+
+/**
+ * List onboarding applications for review
+ */
+export const getApiAdminOnboardingOptions = (options?: Options<GetApiAdminOnboardingData>) =>
+  queryOptions<
+    GetApiAdminOnboardingResponse,
+    DefaultError,
+    GetApiAdminOnboardingResponse,
+    ReturnType<typeof getApiAdminOnboardingQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiAdminOnboarding({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiAdminOnboardingQueryKey(options),
+  })
+
+export const getApiAdminOnboardingInfiniteQueryKey = (
+  options?: Options<GetApiAdminOnboardingData>,
+): QueryKey<Options<GetApiAdminOnboardingData>> =>
+  createQueryKey("getApiAdminOnboarding", options, true)
+
+/**
+ * List onboarding applications for review
+ */
+export const getApiAdminOnboardingInfiniteOptions = (
+  options?: Options<GetApiAdminOnboardingData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiAdminOnboardingResponse,
+    DefaultError,
+    InfiniteData<GetApiAdminOnboardingResponse>,
+    QueryKey<Options<GetApiAdminOnboardingData>>,
+    | string
+    | Pick<QueryKey<Options<GetApiAdminOnboardingData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiAdminOnboardingData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiAdminOnboarding({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiAdminOnboardingInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+/**
+ * Approve an onboarding application, verifying the user
+ */
+export const postApiAdminOnboardingByIdApproveMutation = (
+  options?: Partial<Options<PostApiAdminOnboardingByIdApproveData>>,
+): UseMutationOptions<
+  PostApiAdminOnboardingByIdApproveResponse,
+  PostApiAdminOnboardingByIdApproveError,
+  Options<PostApiAdminOnboardingByIdApproveData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiAdminOnboardingByIdApproveResponse,
+    PostApiAdminOnboardingByIdApproveError,
+    Options<PostApiAdminOnboardingByIdApproveData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiAdminOnboardingByIdApprove({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Reject an onboarding application with a reason
+ */
+export const postApiAdminOnboardingByIdRejectMutation = (
+  options?: Partial<Options<PostApiAdminOnboardingByIdRejectData>>,
+): UseMutationOptions<
+  PostApiAdminOnboardingByIdRejectResponse,
+  PostApiAdminOnboardingByIdRejectError,
+  Options<PostApiAdminOnboardingByIdRejectData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiAdminOnboardingByIdRejectResponse,
+    PostApiAdminOnboardingByIdRejectError,
+    Options<PostApiAdminOnboardingByIdRejectData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiAdminOnboardingByIdReject({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}

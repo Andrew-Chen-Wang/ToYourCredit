@@ -5,13 +5,11 @@ export const postVoteSchemaParam = Type.Object({
   postId: UUID7String,
 })
 
-export const postVoteSchemaRequest = Type.Object({
-  value: Type.Union([Type.Literal(1), Type.Literal(0), Type.Literal(-1)]),
-})
-
-export const postVoteSchemaResponse = Type.Object({
-  ups: Type.Number(),
-  downs: Type.Number(),
-  score: Type.Number(),
-  userVote: Type.Number(),
-})
+export {
+  downvoteSummarySchemaResponse as postVoteSummarySchemaResponse,
+  downvoterListSchemaQuery as postDownvoterListSchemaQuery,
+  voteSchemaRequest as postVoteSchemaRequest,
+  voteSchemaResponse as postVoteSchemaResponse,
+  voterListSchemaQuery as postVoterListSchemaQuery,
+  voterListSchemaResponse as postVoterListSchemaResponse,
+} from "./vote-shared.serializer"

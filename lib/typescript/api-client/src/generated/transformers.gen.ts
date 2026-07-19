@@ -4,6 +4,8 @@ import type {
   GetApiV1ChatByConversationIdMessagesResponse,
   GetApiV1ChatResponse,
   GetApiV1CommentPostByPostIdResponse,
+  GetApiV1CommentVoteByCommentIdDownvotersResponse,
+  GetApiV1CommentVoteByCommentIdUpvotersResponse,
   GetApiV1CommunityByNameResponse,
   GetApiV1CommunityJoinRequestByCommunityIdPendingResponse,
   GetApiV1CustomFeedByUsernameBySlugPostsResponse,
@@ -17,6 +19,7 @@ import type {
   GetApiV1HistoryPostsResponse,
   GetApiV1HistoryRecentCommunitiesResponse,
   GetApiV1HistoryRecentPostsResponse,
+  GetApiV1InviteCodeResponse,
   GetApiV1ModLogByCommunityIdResponse,
   GetApiV1ModmailByIdMessagesResponse,
   GetApiV1ModmailCommunityByCommunityIdResponse,
@@ -32,8 +35,11 @@ import type {
   GetApiV1ModUsersByCommunityIdRestrictedResponse,
   GetApiV1MutedCommunityMineResponse,
   GetApiV1NotificationResponse,
+  GetApiV1OnboardingMeResponse,
   GetApiV1PostByIdResponse,
   GetApiV1PostInsightsByPostIdResponse,
+  GetApiV1PostVoteByPostIdDownvotersResponse,
+  GetApiV1PostVoteByPostIdUpvotersResponse,
   GetApiV1ScheduledPostCommunityByCommunityIdResponse,
   GetApiV1ScheduledPostMineResponse,
   GetApiV1SearchResponse,
@@ -50,9 +56,64 @@ import type {
   GetApiV1WikiByCommunityNameBySlugResponse,
   GetApiV1WikiByCommunityNameBySlugRevisionsResponse,
   PatchApiV1DraftByIdResponse,
+  PatchApiV1OnboardingResponse,
   PatchApiV1UserMeResponse,
   PostApiV1ChatByConversationIdMessagesResponse,
+  PostApiV1InviteCodeResponse,
+  PostApiV1OnboardingResponse,
 } from "./types.gen"
+
+export const getApiV1OnboardingMeResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1OnboardingMeResponse> => {
+  if (data.application) {
+    data.application.submittedAt = new Date(data.application.submittedAt)
+    if (data.application.reviewedAt) {
+      data.application.reviewedAt = new Date(data.application.reviewedAt)
+    }
+  }
+  return data
+}
+
+export const patchApiV1OnboardingResponseTransformer = async (
+  data: any,
+): Promise<PatchApiV1OnboardingResponse> => {
+  data.application.submittedAt = new Date(data.application.submittedAt)
+  if (data.application.reviewedAt) {
+    data.application.reviewedAt = new Date(data.application.reviewedAt)
+  }
+  return data
+}
+
+export const postApiV1OnboardingResponseTransformer = async (
+  data: any,
+): Promise<PostApiV1OnboardingResponse> => {
+  data.application.submittedAt = new Date(data.application.submittedAt)
+  if (data.application.reviewedAt) {
+    data.application.reviewedAt = new Date(data.application.reviewedAt)
+  }
+  return data
+}
+
+export const getApiV1InviteCodeResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1InviteCodeResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.createdAt = new Date(item.createdAt)
+    if (item.usedAt) {
+      item.usedAt = new Date(item.usedAt)
+    }
+    return item
+  })
+  return data
+}
+
+export const postApiV1InviteCodeResponseTransformer = async (
+  data: any,
+): Promise<PostApiV1InviteCodeResponse> => {
+  data.createdAt = new Date(data.createdAt)
+  return data
+}
 
 export const getApiV1UserByUsernameByUsernameResponseTransformer = async (
   data: any,
@@ -229,6 +290,26 @@ export const getApiV1CommentPostByPostIdResponseTransformer = async (
   return data
 }
 
+export const getApiV1CommentVoteByCommentIdUpvotersResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1CommentVoteByCommentIdUpvotersResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.votedAt = new Date(item.votedAt)
+    return item
+  })
+  return data
+}
+
+export const getApiV1CommentVoteByCommentIdDownvotersResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1CommentVoteByCommentIdDownvotersResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.votedAt = new Date(item.votedAt)
+    return item
+  })
+  return data
+}
+
 export const getApiV1PostByIdResponseTransformer = async (
   data: any,
 ): Promise<GetApiV1PostByIdResponse> => {
@@ -244,6 +325,26 @@ export const getApiV1PostInsightsByPostIdResponseTransformer = async (
 ): Promise<GetApiV1PostInsightsByPostIdResponse> => {
   data.views48h = data.views48h.map((item: any) => {
     item.bucket = new Date(item.bucket)
+    return item
+  })
+  return data
+}
+
+export const getApiV1PostVoteByPostIdUpvotersResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1PostVoteByPostIdUpvotersResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.votedAt = new Date(item.votedAt)
+    return item
+  })
+  return data
+}
+
+export const getApiV1PostVoteByPostIdDownvotersResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1PostVoteByPostIdDownvotersResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.votedAt = new Date(item.votedAt)
     return item
   })
   return data

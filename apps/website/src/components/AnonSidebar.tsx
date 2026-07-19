@@ -8,8 +8,9 @@ const MAIN_LINKS = [
 ]
 
 const RESOURCE_LINKS = [
-  { href: "/about", label: "About ReadIt" },
-  { href: "/rules", label: "ReadIt Rules" },
+  { href: "/about", label: "About ToYourCredit" },
+  { href: "/rules", label: "ToYourCredit Rules" },
+  { href: "/community-terms", label: "Community Terms" },
   { href: "/legal", label: "Privacy Policy" },
 ]
 

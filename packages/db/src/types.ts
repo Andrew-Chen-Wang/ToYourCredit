@@ -128,6 +128,13 @@ export interface CommentVote {
   value: number
 }
 
+export interface CommentVoteReason {
+  category: string
+  commentId: string
+  createdAt: Generated<Timestamp>
+  userId: string
+}
+
 export interface Community {
   allowedPostTypes: Generated<string>
   appearInFeeds: Generated<boolean>
@@ -303,6 +310,17 @@ export interface CustomFeedCommunity {
   customFeedId: string
 }
 
+export interface InviteCode {
+  code: string
+  createdAt: Generated<Timestamp>
+  createdByUserId: string
+  id: string
+  referralNickname: string | null
+  revokedAt: Timestamp | null
+  usedAt: Timestamp | null
+  usedByUserId: string | null
+}
+
 export interface ModAction {
   action: string
   communityId: string
@@ -366,6 +384,23 @@ export interface Notification {
   previewSnapshot: Json | null
   readAt: Timestamp | null
   type: string
+  userId: string
+}
+
+export interface OnboardingApplication {
+  acceptWrongLink: string
+  createdAt: Generated<Timestamp>
+  criticalThinkingLink: string
+  id: string
+  inviteCodeId: string
+  opinionLink: string
+  profileLink: string
+  rejectionReason: string | null
+  reviewedAt: Timestamp | null
+  reviewedByUserId: string | null
+  status: Generated<string>
+  submittedAt: Generated<Timestamp>
+  updatedAt: Generated<Timestamp>
   userId: string
 }
 
@@ -506,6 +541,13 @@ export interface PostVote {
   value: number
 }
 
+export interface PostVoteReason {
+  category: string
+  createdAt: Generated<Timestamp>
+  postId: string
+  userId: string
+}
+
 export interface RemovalReason {
   communityId: string
   createdAt: Generated<Timestamp>
@@ -565,6 +607,7 @@ export interface User {
   suspendedAt: Timestamp | null
   suspensionReason: string | null
   username: string
+  verificationStatus: Generated<string>
 }
 
 export interface UserBlock {
@@ -660,6 +703,7 @@ export interface DB {
   commentReport: CommentReport
   commentSave: CommentSave
   commentVote: CommentVote
+  commentVoteReason: CommentVoteReason
   community: Community
   communityApprovedUser: CommunityApprovedUser
   communityBan: CommunityBan
@@ -676,12 +720,14 @@ export interface DB {
   communityWidget: CommunityWidget
   customFeed: CustomFeed
   customFeedCommunity: CustomFeedCommunity
+  inviteCode: InviteCode
   modAction: ModAction
   modmailConversation: ModmailConversation
   modmailMessage: ModmailMessage
   modNote: ModNote
   modSavedResponse: ModSavedResponse
   notification: Notification
+  onboardingApplication: OnboardingApplication
   post: Post
   postDraft: PostDraft
   postFlairTemplate: PostFlairTemplate
@@ -694,6 +740,7 @@ export interface DB {
   postView: PostView
   postViewHourly: PostViewHourly
   postVote: PostVote
+  postVoteReason: PostVoteReason
   removalReason: RemovalReason
   scheduledPost: ScheduledPost
   session: Session

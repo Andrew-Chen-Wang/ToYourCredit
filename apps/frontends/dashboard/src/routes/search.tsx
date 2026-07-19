@@ -9,19 +9,22 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
 import { cn } from "@ui/base/lib/utils"
 import { CommunityCard } from "@ui/seo-shared/community/CommunityCard"
-import { PostRow } from "@ui/seo-shared/post/PostRow"
 import { mediaUrl } from "@frontends/dashboard/lib/mediaUrl"
 import {
   applyVoteToCache,
   chipClass,
   CommentResultCard,
-  nextVoteValue,
   permalinkForPost,
   type PostResult,
   ProfileResultCard,
   type SearchPageData,
   toRowPost,
 } from "@frontends/dashboard/components/searchResults"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { getApiV1Search } from "@lib/api-client/generated/sdk.gen"
 import {
   getApiV1CommunityByNameOptions,
@@ -187,12 +190,12 @@ function SearchPage() {
     },
   })
 
-  function vote(post: PostResult, direction: 1 | -1) {
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(post: PostResult, input: VoteInput) {
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<SearchPageData>>(queryKey, (old) =>
       applyVoteToCache(old, post.id, newVote),
     )
-    voteMutation.mutate({ path: { postId: post.id }, body: { value: newVote } })
+    voteMutation.mutate({ path: { postId: post.id }, body: input })
   }
 
   function update(patch: Partial<SearchParams>) {
@@ -245,7 +248,7 @@ function SearchPage() {
           onChange={(e) => {
             setDraft(e.target.value)
           }}
-          placeholder={scopeLabel ? `Search in ${scopeLabel}` : "Search ReadIt"}
+          placeholder={scopeLabel ? `Search in ${scopeLabel}` : "Search ToYourCredit"}
           aria-label="Search"
           className="min-w-0 flex-1 bg-transparent py-2 pr-3 text-sm outline-none"
         />
@@ -317,17 +320,15 @@ function SearchPage() {
             <div className={cn(isGrid ? "grid gap-3 sm:grid-cols-2" : "flex flex-col gap-3")}>
               {(params.type === "posts" || params.type === "media") &&
                 posts.map((post) => (
-                  <PostRow
+                  <VotablePostRow
                     key={post.id}
                     post={toRowPost(post)}
                     href={permalinkForPost(post)}
                     communityHref={post.community ? `/r/${post.community.name}` : undefined}
                     authorHref={post.author ? `/user/${post.author.username}` : undefined}
-                    onUpvote={() => {
-                      vote(post, 1)
-                    }}
-                    onDownvote={() => {
-                      vote(post, -1)
+                    ups={post.ups}
+                    onCastVote={(input) => {
+                      castVote(post, input)
                     }}
                   />
                 ))}

@@ -133,7 +133,7 @@ function SettingsSection() {
 }
 
 /**
- * Extra profile right-sidebar cards below the Karma card: communities the user
+ * Extra profile right-sidebar cards below the Credit card: communities the user
  * moderates, their social links, and (own profile only) quick settings rows.
  *
  * TODO(m17-backend): `moderating` and `socialLinks` come from new endpoints that

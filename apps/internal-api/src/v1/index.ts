@@ -20,7 +20,9 @@ import draft from "./draft"
 import media from "./media"
 import modLog from "./mod-log"
 import modmail from "./modmail"
+import inviteCode from "./invite-code"
 import notification from "./notification"
+import onboarding from "./onboarding"
 import modQueue from "./mod-queue"
 import modSavedResponse from "./mod-saved-response"
 import modTeam from "./mod-team"
@@ -45,6 +47,8 @@ const app = new Hono({
 })
   .basePath("/v1")
   .route("/auth", auth)
+  .route("/onboarding", onboarding)
+  .route("/invite-code", inviteCode)
   .route("/user", user)
   .route("/user", userSettings)
   .route("/topic", topic)

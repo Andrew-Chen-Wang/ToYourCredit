@@ -7,6 +7,11 @@ import { PostDetailCard } from "@ui/seo-shared/post/PostDetailCard"
 import type { CommentSortValue } from "@ui/seo-shared/comment/types"
 import { CommentSection } from "@frontends/dashboard/components/CommentSection"
 import { PostCommentSearch } from "@frontends/dashboard/components/PostCommentSearch"
+import {
+  usePostVoteExtras,
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { PostActionsMenu } from "@frontends/dashboard/components/PostActionsMenu"
 import { PostShareMenu } from "@frontends/dashboard/components/PostShareMenu"
 import {
@@ -53,11 +58,6 @@ function usePost(postId: string) {
   return useQuery(getApiV1PostByIdOptions({ path: { id: postId } }))
 }
 
-function nextVoteValue(current: number, direction: 1 | -1): 1 | 0 | -1 {
-  if (direction === 1) return current === 1 ? 0 : 1
-  return current === -1 ? 0 : -1
-}
-
 function PostDetailPage() {
   // Splat route: the URL is /r/:name/comments/:id[/:slug]. The id is the first
   // splat segment; any trailing slug is cosmetic and ignored for lookup.
@@ -72,23 +72,33 @@ function PostDetailPage() {
   const postKey = getApiV1PostByIdOptions({ path: { id: postId } }).queryKey
 
   const voteMutation = useMutation({
-    mutationFn: (value: 1 | 0 | -1) =>
-      putApiV1PostVoteByPostId({ path: { postId }, body: { value }, throwOnError: true }),
+    mutationFn: (input: VoteInput) =>
+      putApiV1PostVoteByPostId({ path: { postId }, body: input, throwOnError: true }),
     onError: () => {
       void queryClient.invalidateQueries({ queryKey: postKey })
       toast.error("Could not register your vote")
     },
   })
 
-  function vote(direction: 1 | -1) {
-    const post = postQuery.data
-    if (!post) return
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(input: VoteInput) {
+    if (!postQuery.data) return
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<PostData>(postKey, (old) =>
       old ? { ...old, userVote: newVote, score: old.score + (newVote - old.userVote) } : old,
     )
-    voteMutation.mutate(newVote)
+    voteMutation.mutate(input)
   }
+
+  const {
+    extras: voteExtras,
+    onUpvote,
+    dialogs: voteDialogs,
+  } = usePostVoteExtras({
+    postId,
+    userVote: postQuery.data?.userVote ?? 0,
+    ups: postQuery.data?.ups,
+    onCastVote: castVote,
+  })
 
   // M17c: the title-slug in the URL is cosmetic — the post is always fetched by
   // id. Once the post loads, append/replace its canonical slug onto the URL with
@@ -154,12 +164,9 @@ function PostDetailPage() {
           wrapCommunityLink={wrapCommunityLink}
           wrapAuthorLink={wrapAuthorLink}
           voteDisabled={post.isLocked}
-          onUpvote={() => {
-            vote(1)
-          }}
-          onDownvote={() => {
-            vote(-1)
-          }}
+          onUpvote={onUpvote}
+          onDownvote={() => {}}
+          voteExtras={voteExtras}
           shareSlot={
             <PostShareMenu
               post={{
@@ -198,6 +205,7 @@ function PostDetailPage() {
             />
           }
         />
+        {voteDialogs}
 
         <PostCommentSearch postId={postId} communityName={name} />
 

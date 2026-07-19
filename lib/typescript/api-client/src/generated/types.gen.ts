@@ -24,6 +24,10 @@ export type ErrorObjectT = {
     | "ServiceUnavailable"
     | "InsufficientPermissions"
     | "Suspended"
+    | "NotVerified"
+    | "InviteCodeInvalid"
+    | "InviteCodeLimitReached"
+    | "AlreadySubmitted"
     | "ValidationFailed"
     | "InvalidInput"
     | "MissingRequiredField"
@@ -61,6 +65,7 @@ export type GetApiV1AuthMeResponses = {
       name: string | null
       email: string
       isAdmin: boolean
+      verificationStatus: "unverified" | "pending" | "verified" | "rejected"
     } | null
   }
 }
@@ -91,6 +96,256 @@ export type PostApiV1AuthLogoutResponses = {
 
 export type PostApiV1AuthLogoutResponse =
   PostApiV1AuthLogoutResponses[keyof PostApiV1AuthLogoutResponses]
+
+export type GetApiV1OnboardingMeData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/api/v1/onboarding/me"
+}
+
+export type GetApiV1OnboardingMeResponses = {
+  /**
+   * Onboarding application or null
+   */
+  200: {
+    application: {
+      id: string
+      status: string
+      profileLink: string
+      opinionLink: string
+      criticalThinkingLink: string
+      acceptWrongLink: string
+      rejectionReason: string | null
+      submittedAt: Date
+      reviewedAt: Date | null
+    } | null
+  }
+}
+
+export type GetApiV1OnboardingMeResponse =
+  GetApiV1OnboardingMeResponses[keyof GetApiV1OnboardingMeResponses]
+
+export type PatchApiV1OnboardingData = {
+  body?: {
+    profileLink: string
+    opinionLink: string
+    criticalThinkingLink: string
+    acceptWrongLink: string
+  }
+  path?: never
+  query?: never
+  url: "/api/v1/onboarding"
+}
+
+export type PatchApiV1OnboardingErrors = {
+  /**
+   * Application already approved
+   */
+  400: ErrorResponseT
+  /**
+   * No application to edit
+   */
+  404: ErrorResponseT
+}
+
+export type PatchApiV1OnboardingError = PatchApiV1OnboardingErrors[keyof PatchApiV1OnboardingErrors]
+
+export type PatchApiV1OnboardingResponses = {
+  /**
+   * Application updated
+   */
+  200: {
+    application: {
+      id: string
+      status: string
+      profileLink: string
+      opinionLink: string
+      criticalThinkingLink: string
+      acceptWrongLink: string
+      rejectionReason: string | null
+      submittedAt: Date
+      reviewedAt: Date | null
+    }
+  }
+}
+
+export type PatchApiV1OnboardingResponse =
+  PatchApiV1OnboardingResponses[keyof PatchApiV1OnboardingResponses]
+
+export type PostApiV1OnboardingData = {
+  body?: {
+    inviteCode: string
+    profileLink: string
+    opinionLink: string
+    criticalThinkingLink: string
+    acceptWrongLink: string
+  }
+  path?: never
+  query?: never
+  url: "/api/v1/onboarding"
+}
+
+export type PostApiV1OnboardingErrors = {
+  /**
+   * Invalid or used invite code, or already submitted
+   */
+  400: ErrorResponseT
+}
+
+export type PostApiV1OnboardingError = PostApiV1OnboardingErrors[keyof PostApiV1OnboardingErrors]
+
+export type PostApiV1OnboardingResponses = {
+  /**
+   * Application submitted
+   */
+  201: {
+    application: {
+      id: string
+      status: string
+      profileLink: string
+      opinionLink: string
+      criticalThinkingLink: string
+      acceptWrongLink: string
+      rejectionReason: string | null
+      submittedAt: Date
+      reviewedAt: Date | null
+    }
+  }
+}
+
+export type PostApiV1OnboardingResponse =
+  PostApiV1OnboardingResponses[keyof PostApiV1OnboardingResponses]
+
+export type GetApiV1InviteCodeData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/api/v1/invite-code"
+}
+
+export type GetApiV1InviteCodeResponses = {
+  /**
+   * Invite codes with referral info
+   */
+  200: {
+    data: Array<{
+      id: string
+      code: string
+      status: "active" | "used" | "revoked"
+      createdAt: Date
+      usedAt: Date | null
+      referral: {
+        userId: string
+        username: string
+        displayName: string | null
+        avatarImageKey: string | null
+        nickname: string
+      } | null
+    }>
+    activeCount: number
+    totalCount: number
+    maxActive: number
+    maxTotal: number
+  }
+}
+
+export type GetApiV1InviteCodeResponse =
+  GetApiV1InviteCodeResponses[keyof GetApiV1InviteCodeResponses]
+
+export type PostApiV1InviteCodeData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/api/v1/invite-code"
+}
+
+export type PostApiV1InviteCodeErrors = {
+  /**
+   * Invite code limit reached
+   */
+  400: ErrorResponseT
+}
+
+export type PostApiV1InviteCodeError = PostApiV1InviteCodeErrors[keyof PostApiV1InviteCodeErrors]
+
+export type PostApiV1InviteCodeResponses = {
+  /**
+   * Invite code created
+   */
+  201: {
+    id: string
+    code: string
+    createdAt: Date
+  }
+}
+
+export type PostApiV1InviteCodeResponse =
+  PostApiV1InviteCodeResponses[keyof PostApiV1InviteCodeResponses]
+
+export type DeleteApiV1InviteCodeByIdData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/v1/invite-code/{id}"
+}
+
+export type DeleteApiV1InviteCodeByIdErrors = {
+  /**
+   * Invite code not found or already used
+   */
+  404: ErrorResponseT
+}
+
+export type DeleteApiV1InviteCodeByIdError =
+  DeleteApiV1InviteCodeByIdErrors[keyof DeleteApiV1InviteCodeByIdErrors]
+
+export type DeleteApiV1InviteCodeByIdResponses = {
+  /**
+   * Invite code revoked
+   */
+  200: {
+    [key: string]: unknown
+  }
+}
+
+export type DeleteApiV1InviteCodeByIdResponse =
+  DeleteApiV1InviteCodeByIdResponses[keyof DeleteApiV1InviteCodeByIdResponses]
+
+export type PatchApiV1InviteCodeByIdNicknameData = {
+  body?: {
+    nickname: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/v1/invite-code/{id}/nickname"
+}
+
+export type PatchApiV1InviteCodeByIdNicknameErrors = {
+  /**
+   * Invite code not found or not used yet
+   */
+  404: ErrorResponseT
+}
+
+export type PatchApiV1InviteCodeByIdNicknameError =
+  PatchApiV1InviteCodeByIdNicknameErrors[keyof PatchApiV1InviteCodeByIdNicknameErrors]
+
+export type PatchApiV1InviteCodeByIdNicknameResponses = {
+  /**
+   * Nickname updated
+   */
+  200: {
+    [key: string]: unknown
+  }
+}
+
+export type PatchApiV1InviteCodeByIdNicknameResponse =
+  PatchApiV1InviteCodeByIdNicknameResponses[keyof PatchApiV1InviteCodeByIdNicknameResponses]
 
 export type GetApiV1UserByUsernameByUsernameData = {
   body?: never
@@ -3352,9 +3607,23 @@ export type PatchApiV1CommentByIdResponse =
   PatchApiV1CommentByIdResponses[keyof PatchApiV1CommentByIdResponses]
 
 export type PutApiV1CommentVoteByCommentIdData = {
-  body?: {
-    value: -1 | 0 | 1
-  }
+  body?:
+    | {
+        credit: boolean
+      }
+    | {
+        downvoteCategories: Array<
+          | "bad_source"
+          | "needs_better_source"
+          | "inflammatory"
+          | "being_a_dick"
+          | "trolling"
+          | "wont_accept_wrong"
+          | "off_topic"
+          | "unsupported_argument"
+          | "spam"
+        >
+      }
   path: {
     commentId: string
   }
@@ -3385,11 +3654,129 @@ export type PutApiV1CommentVoteByCommentIdResponses = {
     downs: number
     score: number
     userVote: number
+    myDownvoteCategories: Array<string>
   }
 }
 
 export type PutApiV1CommentVoteByCommentIdResponse =
   PutApiV1CommentVoteByCommentIdResponses[keyof PutApiV1CommentVoteByCommentIdResponses]
+
+export type GetApiV1CommentVoteByCommentIdUpvotersData = {
+  body?: never
+  path: {
+    commentId: string
+  }
+  query?: {
+    cursor?: string
+    limit?: number
+  }
+  url: "/api/v1/comment-vote/{commentId}/upvoters"
+}
+
+export type GetApiV1CommentVoteByCommentIdUpvotersErrors = {
+  /**
+   * Comment not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1CommentVoteByCommentIdUpvotersError =
+  GetApiV1CommentVoteByCommentIdUpvotersErrors[keyof GetApiV1CommentVoteByCommentIdUpvotersErrors]
+
+export type GetApiV1CommentVoteByCommentIdUpvotersResponses = {
+  /**
+   * Paginated upvoter list
+   */
+  200: {
+    data: Array<{
+      userId: string
+      username: string
+      displayName: string | null
+      avatarImageKey: string | null
+      votedAt: Date
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type GetApiV1CommentVoteByCommentIdUpvotersResponse =
+  GetApiV1CommentVoteByCommentIdUpvotersResponses[keyof GetApiV1CommentVoteByCommentIdUpvotersResponses]
+
+export type GetApiV1CommentVoteByCommentIdDownvotersData = {
+  body?: never
+  path: {
+    commentId: string
+  }
+  query?: {
+    cursor?: string
+    limit?: number
+    category?: string
+  }
+  url: "/api/v1/comment-vote/{commentId}/downvoters"
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvotersErrors = {
+  /**
+   * Comment not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvotersError =
+  GetApiV1CommentVoteByCommentIdDownvotersErrors[keyof GetApiV1CommentVoteByCommentIdDownvotersErrors]
+
+export type GetApiV1CommentVoteByCommentIdDownvotersResponses = {
+  /**
+   * Paginated downvoter list
+   */
+  200: {
+    data: Array<{
+      userId: string
+      username: string
+      displayName: string | null
+      avatarImageKey: string | null
+      votedAt: Date
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvotersResponse =
+  GetApiV1CommentVoteByCommentIdDownvotersResponses[keyof GetApiV1CommentVoteByCommentIdDownvotersResponses]
+
+export type GetApiV1CommentVoteByCommentIdDownvoteSummaryData = {
+  body?: never
+  path: {
+    commentId: string
+  }
+  query?: never
+  url: "/api/v1/comment-vote/{commentId}/downvote-summary"
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors = {
+  /**
+   * Comment not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvoteSummaryError =
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors[keyof GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors]
+
+export type GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses = {
+  /**
+   * Downvote summary
+   */
+  200: {
+    categoryCounts: {
+      [key: string]: unknown | number
+    }
+    myCategories: Array<string>
+  }
+}
+
+export type GetApiV1CommentVoteByCommentIdDownvoteSummaryResponse =
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses[keyof GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses]
 
 export type DeleteApiV1PostByIdData = {
   body?: never
@@ -3677,9 +4064,23 @@ export type GetApiV1PostInsightsByPostIdResponse =
   GetApiV1PostInsightsByPostIdResponses[keyof GetApiV1PostInsightsByPostIdResponses]
 
 export type PutApiV1PostVoteByPostIdData = {
-  body?: {
-    value: 1 | 0 | -1
-  }
+  body?:
+    | {
+        credit: boolean
+      }
+    | {
+        downvoteCategories: Array<
+          | "bad_source"
+          | "needs_better_source"
+          | "inflammatory"
+          | "being_a_dick"
+          | "trolling"
+          | "wont_accept_wrong"
+          | "off_topic"
+          | "unsupported_argument"
+          | "spam"
+        >
+      }
   path: {
     postId: string
   }
@@ -3710,11 +4111,129 @@ export type PutApiV1PostVoteByPostIdResponses = {
     downs: number
     score: number
     userVote: number
+    myDownvoteCategories: Array<string>
   }
 }
 
 export type PutApiV1PostVoteByPostIdResponse =
   PutApiV1PostVoteByPostIdResponses[keyof PutApiV1PostVoteByPostIdResponses]
+
+export type GetApiV1PostVoteByPostIdUpvotersData = {
+  body?: never
+  path: {
+    postId: string
+  }
+  query?: {
+    cursor?: string
+    limit?: number
+  }
+  url: "/api/v1/post-vote/{postId}/upvoters"
+}
+
+export type GetApiV1PostVoteByPostIdUpvotersErrors = {
+  /**
+   * Post not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1PostVoteByPostIdUpvotersError =
+  GetApiV1PostVoteByPostIdUpvotersErrors[keyof GetApiV1PostVoteByPostIdUpvotersErrors]
+
+export type GetApiV1PostVoteByPostIdUpvotersResponses = {
+  /**
+   * Paginated upvoter list
+   */
+  200: {
+    data: Array<{
+      userId: string
+      username: string
+      displayName: string | null
+      avatarImageKey: string | null
+      votedAt: Date
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type GetApiV1PostVoteByPostIdUpvotersResponse =
+  GetApiV1PostVoteByPostIdUpvotersResponses[keyof GetApiV1PostVoteByPostIdUpvotersResponses]
+
+export type GetApiV1PostVoteByPostIdDownvotersData = {
+  body?: never
+  path: {
+    postId: string
+  }
+  query?: {
+    cursor?: string
+    limit?: number
+    category?: string
+  }
+  url: "/api/v1/post-vote/{postId}/downvoters"
+}
+
+export type GetApiV1PostVoteByPostIdDownvotersErrors = {
+  /**
+   * Post not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1PostVoteByPostIdDownvotersError =
+  GetApiV1PostVoteByPostIdDownvotersErrors[keyof GetApiV1PostVoteByPostIdDownvotersErrors]
+
+export type GetApiV1PostVoteByPostIdDownvotersResponses = {
+  /**
+   * Paginated downvoter list
+   */
+  200: {
+    data: Array<{
+      userId: string
+      username: string
+      displayName: string | null
+      avatarImageKey: string | null
+      votedAt: Date
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type GetApiV1PostVoteByPostIdDownvotersResponse =
+  GetApiV1PostVoteByPostIdDownvotersResponses[keyof GetApiV1PostVoteByPostIdDownvotersResponses]
+
+export type GetApiV1PostVoteByPostIdDownvoteSummaryData = {
+  body?: never
+  path: {
+    postId: string
+  }
+  query?: never
+  url: "/api/v1/post-vote/{postId}/downvote-summary"
+}
+
+export type GetApiV1PostVoteByPostIdDownvoteSummaryErrors = {
+  /**
+   * Post not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1PostVoteByPostIdDownvoteSummaryError =
+  GetApiV1PostVoteByPostIdDownvoteSummaryErrors[keyof GetApiV1PostVoteByPostIdDownvoteSummaryErrors]
+
+export type GetApiV1PostVoteByPostIdDownvoteSummaryResponses = {
+  /**
+   * Downvote summary
+   */
+  200: {
+    categoryCounts: {
+      [key: string]: unknown | number
+    }
+    myCategories: Array<string>
+  }
+}
+
+export type GetApiV1PostVoteByPostIdDownvoteSummaryResponse =
+  GetApiV1PostVoteByPostIdDownvoteSummaryResponses[keyof GetApiV1PostVoteByPostIdDownvoteSummaryResponses]
 
 export type GetApiV1FeedCommunityByNameData = {
   body?: never

@@ -40,13 +40,13 @@ const TOGGLES = [
   },
   {
     key: "appearInFeeds" as const,
-    label: "Appear in ReadIt feeds",
+    label: "Appear in ToYourCredit feeds",
     description: "Allow posts to surface in r/all and r/popular.",
   },
   {
     key: "appearInRecommendations" as const,
     label: "Appear in recommendations",
-    description: "Let ReadIt recommend this community to others.",
+    description: "Let ToYourCredit recommend this community to others.",
   },
 ]
 

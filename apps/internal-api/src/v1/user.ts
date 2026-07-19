@@ -12,7 +12,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware, authNoThrowMiddleware } from "../middleware"
+import { authMiddleware, authNoThrowMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
 import { cursorOffsetPaginate } from "../utils/pagination"
 import { throwBadRequest, throwInternalServerError, throwNotFound } from "../utils/http-exception"
@@ -397,6 +397,7 @@ const app = new Hono()
   )
   .post(
     "/me/social-links",
+    verifiedMiddleware,
     describeRoute({
       description: "Add a social link to the current user's profile",
       responses: {
@@ -432,6 +433,7 @@ const app = new Hono()
   )
   .delete(
     "/me/social-links/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Remove a social link from the current user's profile",
       responses: {
@@ -514,6 +516,7 @@ const app = new Hono()
   )
   .patch(
     "/me",
+    verifiedMiddleware,
     describeRoute({
       description: "Update the current user's profile",
       responses: {

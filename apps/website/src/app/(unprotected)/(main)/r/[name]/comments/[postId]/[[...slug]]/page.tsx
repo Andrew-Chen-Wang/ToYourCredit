@@ -26,7 +26,7 @@ export async function generateMetadata({
     return { title: "Post not found" }
   }
   const title = `${post.title} : r/${name}`
-  const description = post.bodyMd?.slice(0, 200) ?? `Discussion in r/${name} on ReadIt.`
+  const description = post.bodyMd?.slice(0, 200) ?? `Discussion in r/${name} on ToYourCredit.`
   return { title, description, openGraph: { title, description } }
 }
 

@@ -30,7 +30,7 @@ function PopularPage() {
         defaultSort="hot"
         permalinkFor={permalinkFor}
         emptyTitle="Nothing trending yet"
-        emptyDescription="Popular posts across ReadIt will show up here."
+        emptyDescription="Popular posts across ToYourCredit will show up here."
       />
     </div>
   )

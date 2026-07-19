@@ -5,8 +5,12 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query"
 import { Button } from "@ui/base/ui/button"
-import { PostRow } from "@ui/seo-shared/post/PostRow"
 import { PostFeedSkeleton } from "@ui/seo-shared/post/PostRowSkeleton"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { PostActionsMenu } from "@frontends/dashboard/components/PostActionsMenu"
 import { PostShareMenu } from "@frontends/dashboard/components/PostShareMenu"
 import { mediaUrl } from "@frontends/dashboard/lib/mediaUrl"
@@ -30,11 +34,6 @@ export type EngagementPostListProps = {
   menuInitial?: { saved?: boolean; hidden?: boolean }
   /** Which menu actions should drop the post from this list (deletes always do). */
   removeTriggers?: { hide?: boolean; unsave?: boolean; unhide?: boolean }
-}
-
-function nextVoteValue(current: number, direction: 1 | -1): 1 | 0 | -1 {
-  if (direction === 1) return current === 1 ? 0 : 1
-  return current === -1 ? 0 : -1
 }
 
 function toDisplayPost(post: FeedPost): FeedPost {
@@ -71,10 +70,10 @@ export function EngagementPostList({
   })
 
   const voteMutation = useMutation({
-    mutationFn: (vars: { postId: string; value: 1 | 0 | -1 }) =>
+    mutationFn: (vars: { postId: string; input: VoteInput }) =>
       putApiV1PostVoteByPostId({
         path: { postId: vars.postId },
-        body: { value: vars.value },
+        body: vars.input,
         throwOnError: true,
       }),
     onError: () => {
@@ -83,8 +82,8 @@ export function EngagementPostList({
     },
   })
 
-  function vote(post: FeedPost, direction: 1 | -1) {
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(post: FeedPost, input: VoteInput) {
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<EngagementPostPage>>(queryKey, (old) =>
       old
         ? {
@@ -100,7 +99,7 @@ export function EngagementPostList({
           }
         : old,
     )
-    voteMutation.mutate({ postId: post.id, value: newVote })
+    voteMutation.mutate({ postId: post.id, input })
   }
 
   function removeFromList(postId: string) {
@@ -169,18 +168,16 @@ export function EngagementPostList({
       className={view === "compact" ? "overflow-hidden rounded-lg border" : "flex flex-col gap-3"}
     >
       {posts.map((post) => (
-        <PostRow
+        <VotablePostRow
           key={post.id}
           post={toDisplayPost(post)}
           variant={view}
           href={permalinkFor(post)}
           communityHref={post.community ? `/r/${post.community.name}` : undefined}
           authorHref={post.author ? `/user/${post.author.username}` : undefined}
-          onUpvote={() => {
-            vote(post, 1)
-          }}
-          onDownvote={() => {
-            vote(post, -1)
+          ups={post.ups}
+          onCastVote={(input) => {
+            castVote(post, input)
           }}
           voteDisabled={post.isLocked}
           shareSlot={

@@ -11,7 +11,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware, authNoThrowMiddleware } from "../middleware"
+import { authMiddleware, authNoThrowMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { cursorOffsetPaginate } from "../utils/pagination"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
@@ -234,6 +234,7 @@ const app = new Hono()
   )
   .post(
     "/",
+    verifiedMiddleware,
     describeRoute({
       description: "Create a custom feed",
       responses: {
@@ -272,6 +273,7 @@ const app = new Hono()
   )
   .patch(
     "/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Update a custom feed (owner only)",
       responses: {
@@ -322,6 +324,7 @@ const app = new Hono()
   )
   .delete(
     "/:id",
+    verifiedMiddleware,
     describeRoute({
       description: "Delete a custom feed (owner only)",
       responses: {
@@ -354,6 +357,7 @@ const app = new Hono()
   )
   .put(
     "/:id/community/:communityId",
+    verifiedMiddleware,
     describeRoute({
       description: "Add a community to a custom feed (owner only)",
       responses: {
@@ -404,6 +408,7 @@ const app = new Hono()
   )
   .delete(
     "/:id/community/:communityId",
+    verifiedMiddleware,
     describeRoute({
       description: "Remove a community from a custom feed (owner only)",
       responses: {

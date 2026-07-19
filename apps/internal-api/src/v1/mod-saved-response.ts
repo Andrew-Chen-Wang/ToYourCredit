@@ -5,7 +5,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -20,7 +20,7 @@ import {
 const SAVED_RESPONSE_CAP = 50
 
 const app = new Hono()
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .get(
     "/:communityId",
     describeRoute({

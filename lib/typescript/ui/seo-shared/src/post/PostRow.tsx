@@ -19,7 +19,7 @@ import { CommunityIcon } from "@ui/seo-shared/community/CommunityIcon"
 import { formatCompactNumber } from "@ui/seo-shared/format-number"
 import { markdownToText } from "@ui/seo-shared/markdown-to-text"
 import { RelativeTime } from "@ui/seo-shared/RelativeTime"
-import { VoteCluster } from "@ui/seo-shared/post/VoteCluster"
+import { VoteCluster, type VoteClusterExtras } from "@ui/seo-shared/post/VoteCluster"
 import { MediaGallery, type MediaGalleryItem } from "@ui/seo-shared/post/MediaGallery"
 
 export type PostRowPost = {
@@ -42,6 +42,9 @@ export type PostRowPost = {
   isLocked: boolean
   stickyPosition: number | null
   score: number
+  /** Distinct users who gave credit / downvoted. Optional: not every payload carries them. */
+  ups?: number
+  downs?: number
   commentCount: number
   /** Total post views. Optional so callers without the field (e.g. mod queue) still fit. */
   viewCount?: number | null
@@ -141,6 +144,8 @@ export type PostRowProps = {
   onUpvote: () => void
   onDownvote: () => void
   voteDisabled?: boolean
+  /** Credit/downvote extras: upvoter count + list, categorized downvote menu. */
+  voteExtras?: VoteClusterExtras
   /** When provided, renders a Share button that copies/props out the permalink. */
   onShare?: () => void
   /** Replaces the default share button (e.g. a share dropdown). Takes precedence over onShare. */
@@ -322,6 +327,7 @@ function Footer({
   onUpvote,
   onDownvote,
   voteDisabled,
+  voteExtras,
   onShare,
   shareSlot,
 }: {
@@ -330,6 +336,7 @@ function Footer({
   onUpvote: () => void
   onDownvote: () => void
   voteDisabled?: boolean
+  voteExtras?: VoteClusterExtras
   onShare?: () => void
   shareSlot?: ReactNode
 }) {
@@ -341,6 +348,7 @@ function Footer({
         onUpvote={onUpvote}
         onDownvote={onDownvote}
         disabled={voteDisabled}
+        extras={voteExtras}
       />
       <SeoLink
         href={href}
@@ -379,6 +387,7 @@ export function PostRow({
   onUpvote,
   onDownvote,
   voteDisabled,
+  voteExtras,
   onShare,
   shareSlot,
   showCommunity = true,
@@ -437,6 +446,7 @@ export function PostRow({
               onUpvote={onUpvote}
               onDownvote={onDownvote}
               voteDisabled={voteDisabled}
+              voteExtras={voteExtras}
               onShare={onShare}
               shareSlot={shareSlot}
             />
@@ -540,6 +550,7 @@ export function PostRow({
         onUpvote={onUpvote}
         onDownvote={onDownvote}
         voteDisabled={voteDisabled}
+        voteExtras={voteExtras}
         onShare={onShare}
         shareSlot={shareSlot}
       />

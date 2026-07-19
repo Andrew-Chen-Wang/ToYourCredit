@@ -11,7 +11,7 @@ export function SiteTopNav() {
         {/* Left zone: logo */}
         <div className="flex flex-1 items-center">
           <Link href="/" className="text-lg font-bold text-primary">
-            ReadIt
+            ToYourCredit
           </Link>
         </div>
 
@@ -21,7 +21,7 @@ export function SiteTopNav() {
             <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search ReadIt"
+              placeholder="Search ToYourCredit"
               aria-label="Search"
               className="h-10 rounded-full border-0 bg-muted/60 pl-10"
               disabled

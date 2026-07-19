@@ -7,13 +7,14 @@ const THEME_COOKIE_NAME = "readit-theme"
 
 // Baseline title/description for every route. Pages that export their own
 // metadata (or generateMetadata) fill in the "%s" slot with a page-specific
-// title, e.g. a community or post name; routes without one fall back to "ReadIt".
+// title, e.g. a community or post name; routes without one fall back to "ToYourCredit".
 export const metadata: Metadata = {
   title: {
-    default: "ReadIt",
-    template: "%s - ReadIt",
+    default: "ToYourCredit",
+    template: "%s - ToYourCredit",
   },
-  description: "ReadIt is a community of communities where you can dive into anything.",
+  description:
+    "ToYourCredit is a curated, invite-only community for serious discussion of political policy.",
 }
 
 export default async function Layout({ children }: { children: React.ReactNode }) {

@@ -24,6 +24,10 @@ export type ErrorObjectT = {
     | "ServiceUnavailable"
     | "InsufficientPermissions"
     | "Suspended"
+    | "NotVerified"
+    | "InviteCodeInvalid"
+    | "InviteCodeLimitReached"
+    | "AlreadySubmitted"
     | "ValidationFailed"
     | "InvalidInput"
     | "MissingRequiredField"
@@ -253,3 +257,110 @@ export type GetApiAdminStatsResponses = {
 }
 
 export type GetApiAdminStatsResponse = GetApiAdminStatsResponses[keyof GetApiAdminStatsResponses]
+
+export type GetApiAdminOnboardingData = {
+  body?: never
+  path?: never
+  query?: {
+    status?: "pending" | "approved" | "rejected"
+    cursor?: string
+  }
+  url: "/api/admin/onboarding"
+}
+
+export type GetApiAdminOnboardingResponses = {
+  /**
+   * Applications with applicant and inviter details
+   */
+  200: {
+    data: Array<{
+      id: string
+      status: string
+      profileLink: string
+      opinionLink: string
+      criticalThinkingLink: string
+      acceptWrongLink: string
+      rejectionReason: string | null
+      submittedAt: Date
+      reviewedAt: Date | null
+      applicant: {
+        id: string
+        username: string
+        email: string
+        createdAt: Date
+      }
+      inviter: {
+        id: string
+        username: string
+      } | null
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type GetApiAdminOnboardingResponse =
+  GetApiAdminOnboardingResponses[keyof GetApiAdminOnboardingResponses]
+
+export type PostApiAdminOnboardingByIdApproveData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/admin/onboarding/{id}/approve"
+}
+
+export type PostApiAdminOnboardingByIdApproveErrors = {
+  /**
+   * Application is not pending
+   */
+  400: ErrorResponseT
+}
+
+export type PostApiAdminOnboardingByIdApproveError =
+  PostApiAdminOnboardingByIdApproveErrors[keyof PostApiAdminOnboardingByIdApproveErrors]
+
+export type PostApiAdminOnboardingByIdApproveResponses = {
+  /**
+   * Application approved
+   */
+  200: {
+    [key: string]: unknown
+  }
+}
+
+export type PostApiAdminOnboardingByIdApproveResponse =
+  PostApiAdminOnboardingByIdApproveResponses[keyof PostApiAdminOnboardingByIdApproveResponses]
+
+export type PostApiAdminOnboardingByIdRejectData = {
+  body?: {
+    reason: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/admin/onboarding/{id}/reject"
+}
+
+export type PostApiAdminOnboardingByIdRejectErrors = {
+  /**
+   * Application is not pending
+   */
+  400: ErrorResponseT
+}
+
+export type PostApiAdminOnboardingByIdRejectError =
+  PostApiAdminOnboardingByIdRejectErrors[keyof PostApiAdminOnboardingByIdRejectErrors]
+
+export type PostApiAdminOnboardingByIdRejectResponses = {
+  /**
+   * Application rejected
+   */
+  200: {
+    [key: string]: unknown
+  }
+}
+
+export type PostApiAdminOnboardingByIdRejectResponse =
+  PostApiAdminOnboardingByIdRejectResponses[keyof PostApiAdminOnboardingByIdRejectResponses]

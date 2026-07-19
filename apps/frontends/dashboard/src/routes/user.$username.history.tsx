@@ -32,7 +32,9 @@ function HistoryPage() {
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-5xl flex-col items-center justify-center gap-2 px-4 text-center">
         <h1 className="text-xl font-semibold">User not found</h1>
-        <p className="text-sm text-muted-foreground">There is no ReadIt user with that username.</p>
+        <p className="text-sm text-muted-foreground">
+          There is no ToYourCredit user with that username.
+        </p>
       </div>
     )
   }

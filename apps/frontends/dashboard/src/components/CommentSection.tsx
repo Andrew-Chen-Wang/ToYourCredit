@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Lock } from "lucide-react"
 import { toast } from "sonner"
@@ -23,6 +23,14 @@ import { CommentComposer } from "@ui/seo-shared/comment/CommentComposer"
 import { CommentSkeleton } from "@ui/seo-shared/comment/CommentSkeleton"
 import { CommentSorter } from "@ui/seo-shared/comment/CommentSorter"
 import { CommentTree, type CommentTreeCallbacks } from "@ui/seo-shared/comment/CommentTree"
+import {
+  CommentVoteContext,
+  VotableCommentNodeView,
+} from "@frontends/dashboard/components/vote/VotableCommentNodeView"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import type { CommentSortValue } from "@ui/seo-shared/comment/types"
 import {
   getApiV1CommentPostByPostIdOptions,
@@ -112,6 +120,20 @@ export function CommentSection({
     [flat, ancestors, focusCommentId],
   )
 
+  // Stable context value; the ref keeps castVote reading the latest handleVote
+  // closure (which captures the current `flat` snapshot for rollback).
+  const handleVoteRef = useRef(handleVote)
+  handleVoteRef.current = handleVote
+  const voteContextValue = useMemo(
+    () => ({
+      castVote: (node: CommentNode, input: VoteInput) => {
+        void handleVoteRef.current(node, input)
+      },
+      disabled: locked,
+    }),
+    [locked],
+  )
+
   function invalidatePost() {
     void queryClient.invalidateQueries({
       queryKey: getApiV1PostByIdOptions({ path: { id: postId } }).queryKey,
@@ -122,13 +144,14 @@ export function CommentSection({
     return `/r/${communityName}/comments/${postId}?comment=${commentId}&sort=${sort}`
   }
 
-  async function handleVote(node: CommentNode, value: -1 | 0 | 1) {
+  async function handleVote(node: CommentNode, input: VoteInput) {
+    const value = voteInputValue(input)
     const snapshot = flat
     setFlat((cur) => cur.map((n) => (n.id === node.id ? applyVoteToNode(n, value) : n)))
     try {
       const { data } = await putApiV1CommentVoteByCommentId({
         path: { commentId: node.id },
-        body: { value },
+        body: input,
         throwOnError: true,
       })
       setFlat((cur) =>
@@ -331,11 +354,7 @@ export function CommentSection({
     buildAuthorHref: (username) => `/user/${username}`,
     buildPermalinkHref: (commentId) => permalinkPath(commentId),
     voteDisabled: locked,
-    onVote: locked
-      ? undefined
-      : (node, value) => {
-          void handleVote(node, value)
-        },
+    NodeView: VotableCommentNodeView,
     onReply: locked
       ? undefined
       : (node) => {
@@ -446,12 +465,14 @@ export function CommentSection({
           No comments yet. Be the first to share what you think.
         </p>
       ) : (
-        <CommentTree
-          nodes={tree}
-          callbacks={callbacks}
-          postAuthorId={postAuthorId}
-          highlightCommentId={focusCommentId}
-        />
+        <CommentVoteContext.Provider value={voteContextValue}>
+          <CommentTree
+            nodes={tree}
+            callbacks={callbacks}
+            postAuthorId={postAuthorId}
+            highlightCommentId={focusCommentId}
+          />
+        </CommentVoteContext.Provider>
       )}
 
       {!focusCommentId && rootCursor ? (

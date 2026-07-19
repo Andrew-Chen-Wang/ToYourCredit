@@ -45,6 +45,7 @@ import {
 import type { PatchApiV1UserMeSettingsData } from "@lib/api-client/generated/types.gen"
 import { PREFERENCE_TYPES } from "@frontends/dashboard/components/notifications/meta"
 import { AccountEngagementCards } from "@frontends/dashboard/components/AccountEngagementCards"
+import { VerificationSettings } from "@frontends/dashboard/components/onboarding/VerificationSettings"
 import { ImageCropDialog } from "@frontends/dashboard/components/ImageCropDialog"
 import { mediaUrl } from "@frontends/dashboard/lib/mediaUrl"
 import { uploadToPresigned } from "@frontends/dashboard/lib/mediaUpload"
@@ -54,6 +55,9 @@ import { toast } from "sonner"
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
 })
 
 type SettingsBody = NonNullable<PatchApiV1UserMeSettingsData["body"]>
@@ -159,7 +163,7 @@ function AccountTab() {
             <Input id="account-email" value={user?.email ?? ""} readOnly disabled />
           </div>
           <div className="flex flex-col gap-2">
-            <Label>Karma</Label>
+            <Label>Credit</Label>
             <p className="text-sm text-muted-foreground">
               {formatCompactNumber(user?.postKarma ?? 0)} post ·{" "}
               {formatCompactNumber(user?.commentKarma ?? 0)} comment
@@ -646,16 +650,27 @@ function NotificationsTab() {
   )
 }
 
+const SETTINGS_TABS = new Set([
+  "account",
+  "profile",
+  "preferences",
+  "notifications",
+  "verification",
+])
+
 function SettingsPage() {
+  const { tab } = Route.useSearch()
+  const initialTab = tab && SETTINGS_TABS.has(tab) ? tab : "account"
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">Settings</h1>
-      <Tabs defaultValue="account">
+      <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="verification">Verification</TabsTrigger>
         </TabsList>
         <TabsContent value="account" className="mt-6">
           <AccountTab />
@@ -668,6 +683,9 @@ function SettingsPage() {
         </TabsContent>
         <TabsContent value="notifications" className="mt-6">
           <NotificationsTab />
+        </TabsContent>
+        <TabsContent value="verification" className="mt-6">
+          <VerificationSettings />
         </TabsContent>
       </Tabs>
     </div>

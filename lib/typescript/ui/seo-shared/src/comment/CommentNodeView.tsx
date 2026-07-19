@@ -16,7 +16,7 @@ import { formatCompactNumber } from "@ui/seo-shared/format-number"
 import { Markdown } from "@ui/seo-shared/Markdown"
 import { RelativeTime } from "@ui/seo-shared/RelativeTime"
 import { SeoLink } from "@ui/seo-shared/_internal/seo-link"
-import { VoteCluster } from "@ui/seo-shared/post/VoteCluster"
+import { VoteCluster, type VoteClusterExtras } from "@ui/seo-shared/post/VoteCluster"
 import { AdminBadge, AuthorInsightsRow } from "@ui/seo-shared/post/PostRow"
 import type { CommentNode } from "@ui/seo-shared/comment/types"
 
@@ -45,6 +45,8 @@ export type CommentNodeViewProps = {
   onUpvote?: () => void
   onDownvote?: () => void
   voteDisabled?: boolean
+  /** Credit/downvote extras: upvoter count + list, categorized downvote menu. */
+  voteExtras?: VoteClusterExtras
   onReply?: () => void
   onShare?: () => void
   onEdit?: () => void
@@ -83,6 +85,7 @@ export function CommentNodeView({
   onUpvote,
   onDownvote,
   voteDisabled,
+  voteExtras,
   onReply,
   onShare,
   onEdit,
@@ -210,6 +213,7 @@ export function CommentNodeView({
               onUpvote={() => onUpvote?.()}
               onDownvote={() => onDownvote?.()}
               disabled={(voteDisabled ?? false) || isRemoved}
+              extras={voteExtras}
               size="sm"
               variant="plain"
             />

@@ -159,7 +159,7 @@ function EmbedDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const url = absoluteUrl(permalink)
-  const snippet = `<iframe src="${url}" width="640" height="480" style="border:1px solid #ccc;border-radius:8px" title="ReadIt post" loading="lazy"></iframe>`
+  const snippet = `<iframe src="${url}" width="640" height="480" style="border:1px solid #ccc;border-radius:8px" title="ToYourCredit post" loading="lazy"></iframe>`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

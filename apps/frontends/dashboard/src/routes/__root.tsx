@@ -7,8 +7,10 @@ import { AppSidebar } from "@frontends/dashboard/components/AppSidebar"
 import { ChatDock } from "@frontends/dashboard/components/chat/ChatDock"
 import { ChatDockProvider } from "@frontends/dashboard/components/chat/ChatDockContext"
 import { ChatSocketProvider } from "@frontends/dashboard/components/chat/ChatSocket"
+import { OnboardingModal } from "@frontends/dashboard/components/onboarding/OnboardingModal"
 import { TopNav } from "@frontends/dashboard/components/TopNav"
 import { getApiV1AuthMeOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
+import { Link } from "@tanstack/react-router"
 import { PanelLeft } from "lucide-react"
 import { useEffect } from "react"
 
@@ -22,37 +24,37 @@ function titleForRoute(routeId: string, params: Record<string, string>): string 
   const username = params.username
   switch (routeId) {
     case "/":
-      return "ReadIt - Dive into anything"
+      return "ToYourCredit - Serious policy discussion"
     case "/popular":
-      return "Popular - ReadIt"
+      return "Popular - ToYourCredit"
     case "/explore":
-      return "Explore - ReadIt"
+      return "Explore - ToYourCredit"
     case "/submit":
-      return "Create a post - ReadIt"
+      return "Create a post - ToYourCredit"
     case "/settings":
-      return "Settings - ReadIt"
+      return "Settings - ToYourCredit"
     case "/notifications":
-      return "Notifications - ReadIt"
+      return "Notifications - ToYourCredit"
     case "/search":
-      return "Search - ReadIt"
+      return "Search - ToYourCredit"
     case "/chat":
-      return "Chat - ReadIt"
+      return "Chat - ToYourCredit"
     case "/profile":
-      return "Profile - ReadIt"
+      return "Profile - ToYourCredit"
   }
-  if (routeId.startsWith("/mod/")) return name ? `Mod - r/${name}` : "Mod Tools - ReadIt"
+  if (routeId.startsWith("/mod/")) return name ? `Mod - r/${name}` : "Mod Tools - ToYourCredit"
   if (routeId.startsWith("/r_/") && routeId.includes("comments")) {
-    return name ? `Post - r/${name}` : "Post - ReadIt"
+    return name ? `Post - r/${name}` : "Post - ToYourCredit"
   }
   if (routeId.startsWith("/r_/") && routeId.includes("submit")) {
-    return name ? `Create a post - r/${name}` : "Create a post - ReadIt"
+    return name ? `Create a post - r/${name}` : "Create a post - ToYourCredit"
   }
   if (routeId.startsWith("/r/") || routeId.startsWith("/r_/")) {
-    return name ? `r/${name}` : "ReadIt"
+    return name ? `r/${name}` : "ToYourCredit"
   }
-  if (routeId.startsWith("/user/")) return username ? `u/${username}` : "ReadIt"
-  if (routeId.startsWith("/feed/")) return username ? `Feed - u/${username}` : "ReadIt"
-  return "ReadIt"
+  if (routeId.startsWith("/user/")) return username ? `u/${username}` : "ToYourCredit"
+  if (routeId.startsWith("/feed/")) return username ? `Feed - u/${username}` : "ToYourCredit"
+  return "ToYourCredit"
 }
 
 function useDocumentTitle() {
@@ -110,11 +112,31 @@ function RootLayout() {
     return null
   }
 
+  const verificationStatus = data.user.verificationStatus
+
   return (
     <ChatSocketProvider>
       <ChatDockProvider>
         <SidebarProvider className="flex min-h-screen w-full flex-col">
           <TopNav />
+          {verificationStatus === "rejected" ? (
+            <div className="border-b bg-destructive/10 px-4 py-2 text-center text-sm">
+              Your membership application was rejected.{" "}
+              <Link
+                to="/settings"
+                search={{ tab: "verification" }}
+                className="font-semibold underline"
+              >
+                Review and resubmit
+              </Link>
+            </div>
+          ) : null}
+          {verificationStatus === "pending" ? (
+            <div className="border-b bg-muted px-4 py-2 text-center text-sm text-muted-foreground">
+              Your membership application is awaiting review. You can read and save content in the
+              meantime.
+            </div>
+          ) : null}
           <div className="flex min-h-0 w-full flex-1">
             <AppSidebar />
             <SidebarInset className="min-w-0">
@@ -123,6 +145,7 @@ function RootLayout() {
             </SidebarInset>
           </div>
         </SidebarProvider>
+        {verificationStatus === "unverified" ? <OnboardingModal /> : null}
         <ChatDock />
       </ChatDockProvider>
     </ChatSocketProvider>

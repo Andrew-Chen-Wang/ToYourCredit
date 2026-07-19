@@ -8,8 +8,12 @@ export {
   getApiAdminUsersQueryKey,
   getApiAdminPostsOptions,
   getApiAdminPostsQueryKey,
+  getApiAdminOnboardingInfiniteOptions,
+  getApiAdminOnboardingInfiniteQueryKey,
   postApiAdminUsersByIdSuspendMutation,
   postApiAdminUsersByIdUnsuspendMutation,
   postApiAdminPostsByIdRemoveMutation,
   postApiAdminPostsByIdRestoreMutation,
+  postApiAdminOnboardingByIdApproveMutation,
+  postApiAdminOnboardingByIdRejectMutation,
 } from "@lib/api-client/admin-generated/@tanstack/react-query.gen"

@@ -8,17 +8,20 @@ import {
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
 import { cn } from "@ui/base/lib/utils"
-import { PostRow } from "@ui/seo-shared/post/PostRow"
 import {
   applyVoteToCache,
   chipClass,
   CommentResultCard,
-  nextVoteValue,
   permalinkForPost,
   type PostResult,
   type SearchPageData,
   toRowPost,
 } from "@frontends/dashboard/components/searchResults"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { getApiV1Search } from "@lib/api-client/generated/sdk.gen"
 import {
   getApiV1CommunityByNameOptions,
@@ -128,12 +131,12 @@ function CommunitySearchPage() {
     },
   })
 
-  function vote(post: PostResult, direction: 1 | -1) {
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(post: PostResult, input: VoteInput) {
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<SearchPageData>>(queryKey, (old) =>
       applyVoteToCache(old, post.id, newVote),
     )
-    voteMutation.mutate({ path: { postId: post.id }, body: { value: newVote } })
+    voteMutation.mutate({ path: { postId: post.id }, body: input })
   }
 
   function update(patch: Partial<CommunitySearchParams>) {
@@ -178,7 +181,7 @@ function CommunitySearchPage() {
           search={{ q: params.q, type: "posts", sort: "relevance", t: "all" }}
           className="mb-3 inline-block text-xs font-medium text-primary hover:underline"
         >
-          Show results from all of ReadIt →
+          Show results from all of ToYourCredit →
         </Link>
       ) : null}
 
@@ -246,18 +249,16 @@ function CommunitySearchPage() {
             <div className="flex flex-col gap-3">
               {params.type === "posts" || params.type === "media"
                 ? posts.map((post) => (
-                    <PostRow
+                    <VotablePostRow
                       key={post.id}
                       post={toRowPost(post)}
                       href={permalinkForPost(post)}
                       communityHref={post.community ? `/r/${post.community.name}` : undefined}
                       authorHref={post.author ? `/user/${post.author.username}` : undefined}
                       showCommunity={false}
-                      onUpvote={() => {
-                        vote(post, 1)
-                      }}
-                      onDownvote={() => {
-                        vote(post, -1)
+                      ups={post.ups}
+                      onCastVote={(input) => {
+                        castVote(post, input)
                       }}
                     />
                   ))

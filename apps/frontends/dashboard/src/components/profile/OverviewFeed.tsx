@@ -5,8 +5,12 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query"
 import { Button } from "@ui/base/ui/button"
-import { PostRow } from "@ui/seo-shared/post/PostRow"
 import { PostFeedSkeleton } from "@ui/seo-shared/post/PostRowSkeleton"
+import { VotablePostRow } from "@frontends/dashboard/components/vote/VotablePostRow"
+import {
+  voteInputValue,
+  type VoteInput,
+} from "@frontends/dashboard/components/vote/usePostVoteExtras"
 import { PostActionsMenu } from "@frontends/dashboard/components/PostActionsMenu"
 import { PostShareMenu } from "@frontends/dashboard/components/PostShareMenu"
 import {
@@ -60,11 +64,6 @@ async function fetchOverviewPage(
   // The endpoint's post/comment items are structurally the FeedPost / CommentWithPost
   // shapes the rows expect (they carry a superset of fields).
   return { data: data.data, nextCursor: data.nextCursor }
-}
-
-function nextVoteValue(current: number, direction: 1 | -1): 1 | 0 | -1 {
-  if (direction === 1) return current === 1 ? 0 : 1
-  return current === -1 ? 0 : -1
 }
 
 function toDisplayPost(post: FeedPost): FeedPost {
@@ -121,10 +120,10 @@ export function OverviewFeed({ username }: { username: string }) {
   })
 
   const voteMutation = useMutation({
-    mutationFn: (vars: { postId: string; value: 1 | 0 | -1 }) =>
+    mutationFn: (vars: { postId: string; input: VoteInput }) =>
       putApiV1PostVoteByPostId({
         path: { postId: vars.postId },
-        body: { value: vars.value },
+        body: vars.input,
         throwOnError: true,
       }),
     onError: () => {
@@ -133,14 +132,14 @@ export function OverviewFeed({ username }: { username: string }) {
     },
   })
 
-  function vote(post: FeedPost, direction: 1 | -1) {
-    const newVote = nextVoteValue(post.userVote, direction)
+  function castVote(post: FeedPost, input: VoteInput) {
+    const newVote = voteInputValue(input)
     queryClient.setQueryData<InfiniteData<OverviewPage>>(queryKey, (old) =>
       mapPosts(old, (p) =>
         p.id === post.id ? { ...p, userVote: newVote, score: p.score + (newVote - p.userVote) } : p,
       ),
     )
-    voteMutation.mutate({ postId: post.id, value: newVote })
+    voteMutation.mutate({ postId: post.id, input })
   }
 
   function removePost(postId: string) {
@@ -223,7 +222,7 @@ export function OverviewFeed({ username }: { username: string }) {
         ) : null}
         {items.map((item) =>
           item.kind === "post" ? (
-            <PostRow
+            <VotablePostRow
               key={`post-${item.post.id}`}
               post={toDisplayPost(item.post)}
               variant={view}
@@ -232,11 +231,9 @@ export function OverviewFeed({ username }: { username: string }) {
               authorHref={item.post.author ? `/user/${item.post.author.username}` : undefined}
               wrapCommunityLink={wrapCommunityLink}
               wrapAuthorLink={wrapAuthorLink}
-              onUpvote={() => {
-                vote(item.post, 1)
-              }}
-              onDownvote={() => {
-                vote(item.post, -1)
+              ups={item.post.ups}
+              onCastVote={(input) => {
+                castVote(item.post, input)
               }}
               voteDisabled={item.post.isLocked}
               shareSlot={

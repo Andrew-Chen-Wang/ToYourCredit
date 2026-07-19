@@ -15,7 +15,7 @@ import { enqueueEsSyncPost, enqueueLinkPreviewFetch, enqueueMediaCleanup } from 
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware, authNoThrowMiddleware } from "../middleware"
+import { verifiedMiddleware, authNoThrowMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
@@ -172,7 +172,7 @@ const app = new Hono()
       return c.json(processed)
     },
   )
-  .use(authMiddleware)
+  .use(verifiedMiddleware)
   .post(
     "/",
     describeRoute({
@@ -344,7 +344,7 @@ const app = new Hono()
         crosspostOfPostId: body.crosspostOfPostId ?? null,
       })
 
-      await crudPostVote(db).setVote(created.id, user.id, 1)
+      await crudPostVote(db).setVote(created.id, user.id, { type: "credit", active: true })
 
       if (holdForReview) await crudPost(db).hold(created.id)
 

@@ -49,7 +49,7 @@ function UserHoverCardBody({
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
           <div className="font-semibold text-foreground">{formatCompactNumber(totalKarma)}</div>
-          <div className="text-muted-foreground">Karma</div>
+          <div className="text-muted-foreground">Credit</div>
         </div>
         <div>
           <div className="inline-flex items-center gap-1 font-semibold text-foreground">

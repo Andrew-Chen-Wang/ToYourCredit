@@ -24,6 +24,7 @@ import {
   deleteApiV1FlairPostTemplatesById,
   deleteApiV1FlairUserTemplatesById,
   deleteApiV1HistoryRecentPosts,
+  deleteApiV1InviteCodeById,
   deleteApiV1ModSavedResponseResponseById,
   deleteApiV1ModTeamByCommunityIdModByUserId,
   deleteApiV1ModUsersByCommunityIdApprovedByUsername,
@@ -46,6 +47,9 @@ import {
   getApiV1ChatByConversationIdMessages,
   getApiV1ChatUnreadCount,
   getApiV1CommentPostByPostId,
+  getApiV1CommentVoteByCommentIdDownvoters,
+  getApiV1CommentVoteByCommentIdDownvoteSummary,
+  getApiV1CommentVoteByCommentIdUpvoters,
   getApiV1CommunityByIdSettings,
   getApiV1CommunityByName,
   getApiV1CommunityJoinRequestByCommunityIdPending,
@@ -70,6 +74,7 @@ import {
   getApiV1HistoryPosts,
   getApiV1HistoryRecentCommunities,
   getApiV1HistoryRecentPosts,
+  getApiV1InviteCode,
   getApiV1ModLogByCommunityId,
   getApiV1ModmailByIdMessages,
   getApiV1ModmailCommunityByCommunityId,
@@ -88,8 +93,12 @@ import {
   getApiV1Notification,
   getApiV1NotificationPreferences,
   getApiV1NotificationUnreadCount,
+  getApiV1OnboardingMe,
   getApiV1PostById,
   getApiV1PostInsightsByPostId,
+  getApiV1PostVoteByPostIdDownvoters,
+  getApiV1PostVoteByPostIdDownvoteSummary,
+  getApiV1PostVoteByPostIdUpvoters,
   getApiV1RemovalReasonByCommunityId,
   getApiV1ScheduledPostCommunityByCommunityId,
   getApiV1ScheduledPostMine,
@@ -125,8 +134,10 @@ import {
   patchApiV1DraftById,
   patchApiV1FlairPostTemplatesById,
   patchApiV1FlairUserTemplatesById,
+  patchApiV1InviteCodeByIdNickname,
   patchApiV1ModSavedResponseResponseById,
   patchApiV1ModTeamByCommunityIdModByUserId,
+  patchApiV1Onboarding,
   patchApiV1PostById,
   patchApiV1RemovalReasonByCommunityIdReorder,
   patchApiV1RemovalReasonReasonById,
@@ -154,6 +165,7 @@ import {
   postApiV1Draft,
   postApiV1FlairByCommunityIdPostTemplates,
   postApiV1FlairByCommunityIdUserTemplates,
+  postApiV1InviteCode,
   postApiV1MediaAvatarConfirm,
   postApiV1MediaAvatarUpload,
   postApiV1MediaBannerConfirm,
@@ -185,6 +197,7 @@ import {
   postApiV1NotificationByIdArchive,
   postApiV1NotificationByIdRead,
   postApiV1NotificationReadAll,
+  postApiV1Onboarding,
   postApiV1Post,
   postApiV1PostActionShareByPostId,
   postApiV1RemovalReasonByCommunityId,
@@ -253,6 +266,9 @@ import type {
   DeleteApiV1FlairUserTemplatesByIdResponse,
   DeleteApiV1HistoryRecentPostsData,
   DeleteApiV1HistoryRecentPostsResponse,
+  DeleteApiV1InviteCodeByIdData,
+  DeleteApiV1InviteCodeByIdError,
+  DeleteApiV1InviteCodeByIdResponse,
   DeleteApiV1ModSavedResponseResponseByIdData,
   DeleteApiV1ModSavedResponseResponseByIdError,
   DeleteApiV1ModSavedResponseResponseByIdResponse,
@@ -312,6 +328,15 @@ import type {
   GetApiV1CommentPostByPostIdData,
   GetApiV1CommentPostByPostIdError,
   GetApiV1CommentPostByPostIdResponse,
+  GetApiV1CommentVoteByCommentIdDownvotersData,
+  GetApiV1CommentVoteByCommentIdDownvotersError,
+  GetApiV1CommentVoteByCommentIdDownvotersResponse,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryData,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryError,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryResponse,
+  GetApiV1CommentVoteByCommentIdUpvotersData,
+  GetApiV1CommentVoteByCommentIdUpvotersError,
+  GetApiV1CommentVoteByCommentIdUpvotersResponse,
   GetApiV1CommunityByIdSettingsData,
   GetApiV1CommunityByIdSettingsError,
   GetApiV1CommunityByIdSettingsResponse,
@@ -370,6 +395,8 @@ import type {
   GetApiV1HistoryRecentCommunitiesResponse,
   GetApiV1HistoryRecentPostsData,
   GetApiV1HistoryRecentPostsResponse,
+  GetApiV1InviteCodeData,
+  GetApiV1InviteCodeResponse,
   GetApiV1ModLogByCommunityIdData,
   GetApiV1ModLogByCommunityIdError,
   GetApiV1ModLogByCommunityIdResponse,
@@ -417,12 +444,23 @@ import type {
   GetApiV1NotificationResponse,
   GetApiV1NotificationUnreadCountData,
   GetApiV1NotificationUnreadCountResponse,
+  GetApiV1OnboardingMeData,
+  GetApiV1OnboardingMeResponse,
   GetApiV1PostByIdData,
   GetApiV1PostByIdError,
   GetApiV1PostByIdResponse,
   GetApiV1PostInsightsByPostIdData,
   GetApiV1PostInsightsByPostIdError,
   GetApiV1PostInsightsByPostIdResponse,
+  GetApiV1PostVoteByPostIdDownvotersData,
+  GetApiV1PostVoteByPostIdDownvotersError,
+  GetApiV1PostVoteByPostIdDownvotersResponse,
+  GetApiV1PostVoteByPostIdDownvoteSummaryData,
+  GetApiV1PostVoteByPostIdDownvoteSummaryError,
+  GetApiV1PostVoteByPostIdDownvoteSummaryResponse,
+  GetApiV1PostVoteByPostIdUpvotersData,
+  GetApiV1PostVoteByPostIdUpvotersError,
+  GetApiV1PostVoteByPostIdUpvotersResponse,
   GetApiV1RemovalReasonByCommunityIdData,
   GetApiV1RemovalReasonByCommunityIdError,
   GetApiV1RemovalReasonByCommunityIdResponse,
@@ -515,12 +553,18 @@ import type {
   PatchApiV1FlairUserTemplatesByIdData,
   PatchApiV1FlairUserTemplatesByIdError,
   PatchApiV1FlairUserTemplatesByIdResponse,
+  PatchApiV1InviteCodeByIdNicknameData,
+  PatchApiV1InviteCodeByIdNicknameError,
+  PatchApiV1InviteCodeByIdNicknameResponse,
   PatchApiV1ModSavedResponseResponseByIdData,
   PatchApiV1ModSavedResponseResponseByIdError,
   PatchApiV1ModSavedResponseResponseByIdResponse,
   PatchApiV1ModTeamByCommunityIdModByUserIdData,
   PatchApiV1ModTeamByCommunityIdModByUserIdError,
   PatchApiV1ModTeamByCommunityIdModByUserIdResponse,
+  PatchApiV1OnboardingData,
+  PatchApiV1OnboardingError,
+  PatchApiV1OnboardingResponse,
   PatchApiV1PostByIdData,
   PatchApiV1PostByIdError,
   PatchApiV1PostByIdResponse,
@@ -601,6 +645,9 @@ import type {
   PostApiV1FlairByCommunityIdUserTemplatesData,
   PostApiV1FlairByCommunityIdUserTemplatesError,
   PostApiV1FlairByCommunityIdUserTemplatesResponse,
+  PostApiV1InviteCodeData,
+  PostApiV1InviteCodeError,
+  PostApiV1InviteCodeResponse,
   PostApiV1MediaAvatarConfirmData,
   PostApiV1MediaAvatarConfirmError,
   PostApiV1MediaAvatarConfirmResponse,
@@ -691,6 +738,9 @@ import type {
   PostApiV1NotificationByIdReadResponse,
   PostApiV1NotificationReadAllData,
   PostApiV1NotificationReadAllResponse,
+  PostApiV1OnboardingData,
+  PostApiV1OnboardingError,
+  PostApiV1OnboardingResponse,
   PostApiV1PostActionShareByPostIdData,
   PostApiV1PostActionShareByPostIdError,
   PostApiV1PostActionShareByPostIdResponse,
@@ -849,6 +899,191 @@ export const postApiV1AuthLogoutMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await postApiV1AuthLogout({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getApiV1OnboardingMeQueryKey = (options?: Options<GetApiV1OnboardingMeData>) =>
+  createQueryKey("getApiV1OnboardingMe", options)
+
+/**
+ * The current user's onboarding application, if any
+ */
+export const getApiV1OnboardingMeOptions = (options?: Options<GetApiV1OnboardingMeData>) =>
+  queryOptions<
+    GetApiV1OnboardingMeResponse,
+    DefaultError,
+    GetApiV1OnboardingMeResponse,
+    ReturnType<typeof getApiV1OnboardingMeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1OnboardingMe({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1OnboardingMeQueryKey(options),
+  })
+
+/**
+ * Edit the four onboarding links; editing after a rejection resubmits the application
+ */
+export const patchApiV1OnboardingMutation = (
+  options?: Partial<Options<PatchApiV1OnboardingData>>,
+): UseMutationOptions<
+  PatchApiV1OnboardingResponse,
+  PatchApiV1OnboardingError,
+  Options<PatchApiV1OnboardingData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PatchApiV1OnboardingResponse,
+    PatchApiV1OnboardingError,
+    Options<PatchApiV1OnboardingData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await patchApiV1Onboarding({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Submit the onboarding application: an invite code plus four required public links
+ */
+export const postApiV1OnboardingMutation = (
+  options?: Partial<Options<PostApiV1OnboardingData>>,
+): UseMutationOptions<
+  PostApiV1OnboardingResponse,
+  PostApiV1OnboardingError,
+  Options<PostApiV1OnboardingData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiV1OnboardingResponse,
+    PostApiV1OnboardingError,
+    Options<PostApiV1OnboardingData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiV1Onboarding({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getApiV1InviteCodeQueryKey = (options?: Options<GetApiV1InviteCodeData>) =>
+  createQueryKey("getApiV1InviteCode", options)
+
+/**
+ * The current user's invite codes and the referrals they brought in
+ */
+export const getApiV1InviteCodeOptions = (options?: Options<GetApiV1InviteCodeData>) =>
+  queryOptions<
+    GetApiV1InviteCodeResponse,
+    DefaultError,
+    GetApiV1InviteCodeResponse,
+    ReturnType<typeof getApiV1InviteCodeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1InviteCode({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1InviteCodeQueryKey(options),
+  })
+
+/**
+ * Generate a new single-use invite code
+ */
+export const postApiV1InviteCodeMutation = (
+  options?: Partial<Options<PostApiV1InviteCodeData>>,
+): UseMutationOptions<
+  PostApiV1InviteCodeResponse,
+  PostApiV1InviteCodeError,
+  Options<PostApiV1InviteCodeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiV1InviteCodeResponse,
+    PostApiV1InviteCodeError,
+    Options<PostApiV1InviteCodeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiV1InviteCode({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Revoke an unused invite code
+ */
+export const deleteApiV1InviteCodeByIdMutation = (
+  options?: Partial<Options<DeleteApiV1InviteCodeByIdData>>,
+): UseMutationOptions<
+  DeleteApiV1InviteCodeByIdResponse,
+  DeleteApiV1InviteCodeByIdError,
+  Options<DeleteApiV1InviteCodeByIdData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteApiV1InviteCodeByIdResponse,
+    DeleteApiV1InviteCodeByIdError,
+    Options<DeleteApiV1InviteCodeByIdData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await deleteApiV1InviteCodeById({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Set a nickname for the referral who used this invite code
+ */
+export const patchApiV1InviteCodeByIdNicknameMutation = (
+  options?: Partial<Options<PatchApiV1InviteCodeByIdNicknameData>>,
+): UseMutationOptions<
+  PatchApiV1InviteCodeByIdNicknameResponse,
+  PatchApiV1InviteCodeByIdNicknameError,
+  Options<PatchApiV1InviteCodeByIdNicknameData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PatchApiV1InviteCodeByIdNicknameResponse,
+    PatchApiV1InviteCodeByIdNicknameError,
+    Options<PatchApiV1InviteCodeByIdNicknameData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await patchApiV1InviteCodeByIdNickname({
         ...options,
         ...fnOptions,
         throwOnError: true,
@@ -3337,7 +3572,7 @@ export const patchApiV1CommentByIdMutation = (
 }
 
 /**
- * Upvote, downvote, or clear a vote on a comment
+ * Give credit to a comment, downvote it with one or more stated categories, or clear the vote
  */
 export const putApiV1CommentVoteByCommentIdMutation = (
   options?: Partial<Options<PutApiV1CommentVoteByCommentIdData>>,
@@ -3362,6 +3597,194 @@ export const putApiV1CommentVoteByCommentIdMutation = (
   }
   return mutationOptions
 }
+
+export const getApiV1CommentVoteByCommentIdUpvotersQueryKey = (
+  options: Options<GetApiV1CommentVoteByCommentIdUpvotersData>,
+) => createQueryKey("getApiV1CommentVoteByCommentIdUpvoters", options)
+
+/**
+ * Users who gave credit to a comment
+ */
+export const getApiV1CommentVoteByCommentIdUpvotersOptions = (
+  options: Options<GetApiV1CommentVoteByCommentIdUpvotersData>,
+) =>
+  queryOptions<
+    GetApiV1CommentVoteByCommentIdUpvotersResponse,
+    GetApiV1CommentVoteByCommentIdUpvotersError,
+    GetApiV1CommentVoteByCommentIdUpvotersResponse,
+    ReturnType<typeof getApiV1CommentVoteByCommentIdUpvotersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1CommentVoteByCommentIdUpvoters({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1CommentVoteByCommentIdUpvotersQueryKey(options),
+  })
+
+export const getApiV1CommentVoteByCommentIdUpvotersInfiniteQueryKey = (
+  options: Options<GetApiV1CommentVoteByCommentIdUpvotersData>,
+): QueryKey<Options<GetApiV1CommentVoteByCommentIdUpvotersData>> =>
+  createQueryKey("getApiV1CommentVoteByCommentIdUpvoters", options, true)
+
+/**
+ * Users who gave credit to a comment
+ */
+export const getApiV1CommentVoteByCommentIdUpvotersInfiniteOptions = (
+  options: Options<GetApiV1CommentVoteByCommentIdUpvotersData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiV1CommentVoteByCommentIdUpvotersResponse,
+    GetApiV1CommentVoteByCommentIdUpvotersError,
+    InfiniteData<GetApiV1CommentVoteByCommentIdUpvotersResponse>,
+    QueryKey<Options<GetApiV1CommentVoteByCommentIdUpvotersData>>,
+    | string
+    | Pick<
+        QueryKey<Options<GetApiV1CommentVoteByCommentIdUpvotersData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiV1CommentVoteByCommentIdUpvotersData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiV1CommentVoteByCommentIdUpvoters({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiV1CommentVoteByCommentIdUpvotersInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+export const getApiV1CommentVoteByCommentIdDownvotersQueryKey = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvotersData>,
+) => createQueryKey("getApiV1CommentVoteByCommentIdDownvoters", options)
+
+/**
+ * Users who downvoted a comment, optionally filtered by category
+ */
+export const getApiV1CommentVoteByCommentIdDownvotersOptions = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvotersData>,
+) =>
+  queryOptions<
+    GetApiV1CommentVoteByCommentIdDownvotersResponse,
+    GetApiV1CommentVoteByCommentIdDownvotersError,
+    GetApiV1CommentVoteByCommentIdDownvotersResponse,
+    ReturnType<typeof getApiV1CommentVoteByCommentIdDownvotersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1CommentVoteByCommentIdDownvoters({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1CommentVoteByCommentIdDownvotersQueryKey(options),
+  })
+
+export const getApiV1CommentVoteByCommentIdDownvotersInfiniteQueryKey = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvotersData>,
+): QueryKey<Options<GetApiV1CommentVoteByCommentIdDownvotersData>> =>
+  createQueryKey("getApiV1CommentVoteByCommentIdDownvoters", options, true)
+
+/**
+ * Users who downvoted a comment, optionally filtered by category
+ */
+export const getApiV1CommentVoteByCommentIdDownvotersInfiniteOptions = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvotersData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiV1CommentVoteByCommentIdDownvotersResponse,
+    GetApiV1CommentVoteByCommentIdDownvotersError,
+    InfiniteData<GetApiV1CommentVoteByCommentIdDownvotersResponse>,
+    QueryKey<Options<GetApiV1CommentVoteByCommentIdDownvotersData>>,
+    | string
+    | Pick<
+        QueryKey<Options<GetApiV1CommentVoteByCommentIdDownvotersData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiV1CommentVoteByCommentIdDownvotersData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiV1CommentVoteByCommentIdDownvoters({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiV1CommentVoteByCommentIdDownvotersInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+export const getApiV1CommentVoteByCommentIdDownvoteSummaryQueryKey = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvoteSummaryData>,
+) => createQueryKey("getApiV1CommentVoteByCommentIdDownvoteSummary", options)
+
+/**
+ * Per-category downvote counts and the caller's own categories
+ */
+export const getApiV1CommentVoteByCommentIdDownvoteSummaryOptions = (
+  options: Options<GetApiV1CommentVoteByCommentIdDownvoteSummaryData>,
+) =>
+  queryOptions<
+    GetApiV1CommentVoteByCommentIdDownvoteSummaryResponse,
+    GetApiV1CommentVoteByCommentIdDownvoteSummaryError,
+    GetApiV1CommentVoteByCommentIdDownvoteSummaryResponse,
+    ReturnType<typeof getApiV1CommentVoteByCommentIdDownvoteSummaryQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1CommentVoteByCommentIdDownvoteSummary({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1CommentVoteByCommentIdDownvoteSummaryQueryKey(options),
+  })
 
 /**
  * Delete a post (author only)
@@ -3494,7 +3917,7 @@ export const getApiV1PostInsightsByPostIdOptions = (
   })
 
 /**
- * Upvote, downvote, or clear a vote on a post
+ * Give credit to a post, downvote it with one or more stated categories, or clear the vote
  */
 export const putApiV1PostVoteByPostIdMutation = (
   options?: Partial<Options<PutApiV1PostVoteByPostIdData>>,
@@ -3519,6 +3942,194 @@ export const putApiV1PostVoteByPostIdMutation = (
   }
   return mutationOptions
 }
+
+export const getApiV1PostVoteByPostIdUpvotersQueryKey = (
+  options: Options<GetApiV1PostVoteByPostIdUpvotersData>,
+) => createQueryKey("getApiV1PostVoteByPostIdUpvoters", options)
+
+/**
+ * Users who gave credit to a post
+ */
+export const getApiV1PostVoteByPostIdUpvotersOptions = (
+  options: Options<GetApiV1PostVoteByPostIdUpvotersData>,
+) =>
+  queryOptions<
+    GetApiV1PostVoteByPostIdUpvotersResponse,
+    GetApiV1PostVoteByPostIdUpvotersError,
+    GetApiV1PostVoteByPostIdUpvotersResponse,
+    ReturnType<typeof getApiV1PostVoteByPostIdUpvotersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1PostVoteByPostIdUpvoters({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1PostVoteByPostIdUpvotersQueryKey(options),
+  })
+
+export const getApiV1PostVoteByPostIdUpvotersInfiniteQueryKey = (
+  options: Options<GetApiV1PostVoteByPostIdUpvotersData>,
+): QueryKey<Options<GetApiV1PostVoteByPostIdUpvotersData>> =>
+  createQueryKey("getApiV1PostVoteByPostIdUpvoters", options, true)
+
+/**
+ * Users who gave credit to a post
+ */
+export const getApiV1PostVoteByPostIdUpvotersInfiniteOptions = (
+  options: Options<GetApiV1PostVoteByPostIdUpvotersData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiV1PostVoteByPostIdUpvotersResponse,
+    GetApiV1PostVoteByPostIdUpvotersError,
+    InfiniteData<GetApiV1PostVoteByPostIdUpvotersResponse>,
+    QueryKey<Options<GetApiV1PostVoteByPostIdUpvotersData>>,
+    | string
+    | Pick<
+        QueryKey<Options<GetApiV1PostVoteByPostIdUpvotersData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiV1PostVoteByPostIdUpvotersData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiV1PostVoteByPostIdUpvoters({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiV1PostVoteByPostIdUpvotersInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+export const getApiV1PostVoteByPostIdDownvotersQueryKey = (
+  options: Options<GetApiV1PostVoteByPostIdDownvotersData>,
+) => createQueryKey("getApiV1PostVoteByPostIdDownvoters", options)
+
+/**
+ * Users who downvoted a post, optionally filtered by category
+ */
+export const getApiV1PostVoteByPostIdDownvotersOptions = (
+  options: Options<GetApiV1PostVoteByPostIdDownvotersData>,
+) =>
+  queryOptions<
+    GetApiV1PostVoteByPostIdDownvotersResponse,
+    GetApiV1PostVoteByPostIdDownvotersError,
+    GetApiV1PostVoteByPostIdDownvotersResponse,
+    ReturnType<typeof getApiV1PostVoteByPostIdDownvotersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1PostVoteByPostIdDownvoters({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1PostVoteByPostIdDownvotersQueryKey(options),
+  })
+
+export const getApiV1PostVoteByPostIdDownvotersInfiniteQueryKey = (
+  options: Options<GetApiV1PostVoteByPostIdDownvotersData>,
+): QueryKey<Options<GetApiV1PostVoteByPostIdDownvotersData>> =>
+  createQueryKey("getApiV1PostVoteByPostIdDownvoters", options, true)
+
+/**
+ * Users who downvoted a post, optionally filtered by category
+ */
+export const getApiV1PostVoteByPostIdDownvotersInfiniteOptions = (
+  options: Options<GetApiV1PostVoteByPostIdDownvotersData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiV1PostVoteByPostIdDownvotersResponse,
+    GetApiV1PostVoteByPostIdDownvotersError,
+    InfiniteData<GetApiV1PostVoteByPostIdDownvotersResponse>,
+    QueryKey<Options<GetApiV1PostVoteByPostIdDownvotersData>>,
+    | string
+    | Pick<
+        QueryKey<Options<GetApiV1PostVoteByPostIdDownvotersData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiV1PostVoteByPostIdDownvotersData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiV1PostVoteByPostIdDownvoters({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiV1PostVoteByPostIdDownvotersInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+export const getApiV1PostVoteByPostIdDownvoteSummaryQueryKey = (
+  options: Options<GetApiV1PostVoteByPostIdDownvoteSummaryData>,
+) => createQueryKey("getApiV1PostVoteByPostIdDownvoteSummary", options)
+
+/**
+ * Per-category downvote counts and the caller's own categories
+ */
+export const getApiV1PostVoteByPostIdDownvoteSummaryOptions = (
+  options: Options<GetApiV1PostVoteByPostIdDownvoteSummaryData>,
+) =>
+  queryOptions<
+    GetApiV1PostVoteByPostIdDownvoteSummaryResponse,
+    GetApiV1PostVoteByPostIdDownvoteSummaryError,
+    GetApiV1PostVoteByPostIdDownvoteSummaryResponse,
+    ReturnType<typeof getApiV1PostVoteByPostIdDownvoteSummaryQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1PostVoteByPostIdDownvoteSummary({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1PostVoteByPostIdDownvoteSummaryQueryKey(options),
+  })
 
 export const getApiV1FeedCommunityByNameQueryKey = (
   options: Options<GetApiV1FeedCommunityByNameData>,

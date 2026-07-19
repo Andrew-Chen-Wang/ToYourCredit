@@ -3,12 +3,20 @@
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from "./client"
 import { client } from "./client.gen"
 import type {
+  GetApiAdminOnboardingData,
+  GetApiAdminOnboardingResponses,
   GetApiAdminPostsData,
   GetApiAdminPostsResponses,
   GetApiAdminStatsData,
   GetApiAdminStatsResponses,
   GetApiAdminUsersData,
   GetApiAdminUsersResponses,
+  PostApiAdminOnboardingByIdApproveData,
+  PostApiAdminOnboardingByIdApproveErrors,
+  PostApiAdminOnboardingByIdApproveResponses,
+  PostApiAdminOnboardingByIdRejectData,
+  PostApiAdminOnboardingByIdRejectErrors,
+  PostApiAdminOnboardingByIdRejectResponses,
   PostApiAdminPostsByIdRemoveData,
   PostApiAdminPostsByIdRemoveErrors,
   PostApiAdminPostsByIdRemoveResponses,
@@ -143,4 +151,54 @@ export const getApiAdminStats = <ThrowOnError extends boolean = false>(
   (options?.client ?? client).get<GetApiAdminStatsResponses, unknown, ThrowOnError>({
     url: "/api/admin/stats",
     ...options,
+  })
+
+/**
+ * List onboarding applications for review
+ */
+export const getApiAdminOnboarding = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiAdminOnboardingData, ThrowOnError>,
+): RequestResult<GetApiAdminOnboardingResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetApiAdminOnboardingResponses, unknown, ThrowOnError>({
+    url: "/api/admin/onboarding",
+    ...options,
+  })
+
+/**
+ * Approve an onboarding application, verifying the user
+ */
+export const postApiAdminOnboardingByIdApprove = <ThrowOnError extends boolean = false>(
+  options: Options<PostApiAdminOnboardingByIdApproveData, ThrowOnError>,
+): RequestResult<
+  PostApiAdminOnboardingByIdApproveResponses,
+  PostApiAdminOnboardingByIdApproveErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PostApiAdminOnboardingByIdApproveResponses,
+    PostApiAdminOnboardingByIdApproveErrors,
+    ThrowOnError
+  >({ url: "/api/admin/onboarding/{id}/approve", ...options })
+
+/**
+ * Reject an onboarding application with a reason
+ */
+export const postApiAdminOnboardingByIdReject = <ThrowOnError extends boolean = false>(
+  options: Options<PostApiAdminOnboardingByIdRejectData, ThrowOnError>,
+): RequestResult<
+  PostApiAdminOnboardingByIdRejectResponses,
+  PostApiAdminOnboardingByIdRejectErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PostApiAdminOnboardingByIdRejectResponses,
+    PostApiAdminOnboardingByIdRejectErrors,
+    ThrowOnError
+  >({
+    url: "/api/admin/onboarding/{id}/reject",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   })

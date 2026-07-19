@@ -95,7 +95,7 @@ export function SearchSuggest() {
         ) : null}
         <input
           type="search"
-          placeholder={scopeLabel ? `Search in ${scopeLabel}` : "Search ReadIt"}
+          placeholder={scopeLabel ? `Search in ${scopeLabel}` : "Search ToYourCredit"}
           aria-label="Search"
           className="min-w-0 flex-1 bg-transparent py-2 pr-3 text-sm outline-none"
           value={draft}

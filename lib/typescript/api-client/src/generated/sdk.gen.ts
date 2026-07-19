@@ -42,6 +42,9 @@ import type {
   DeleteApiV1FlairUserTemplatesByIdResponses,
   DeleteApiV1HistoryRecentPostsData,
   DeleteApiV1HistoryRecentPostsResponses,
+  DeleteApiV1InviteCodeByIdData,
+  DeleteApiV1InviteCodeByIdErrors,
+  DeleteApiV1InviteCodeByIdResponses,
   DeleteApiV1ModSavedResponseResponseByIdData,
   DeleteApiV1ModSavedResponseResponseByIdErrors,
   DeleteApiV1ModSavedResponseResponseByIdResponses,
@@ -101,6 +104,15 @@ import type {
   GetApiV1CommentPostByPostIdData,
   GetApiV1CommentPostByPostIdErrors,
   GetApiV1CommentPostByPostIdResponses,
+  GetApiV1CommentVoteByCommentIdDownvotersData,
+  GetApiV1CommentVoteByCommentIdDownvotersErrors,
+  GetApiV1CommentVoteByCommentIdDownvotersResponses,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryData,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses,
+  GetApiV1CommentVoteByCommentIdUpvotersData,
+  GetApiV1CommentVoteByCommentIdUpvotersErrors,
+  GetApiV1CommentVoteByCommentIdUpvotersResponses,
   GetApiV1CommunityByIdSettingsData,
   GetApiV1CommunityByIdSettingsErrors,
   GetApiV1CommunityByIdSettingsResponses,
@@ -159,6 +171,8 @@ import type {
   GetApiV1HistoryRecentCommunitiesResponses,
   GetApiV1HistoryRecentPostsData,
   GetApiV1HistoryRecentPostsResponses,
+  GetApiV1InviteCodeData,
+  GetApiV1InviteCodeResponses,
   GetApiV1ModLogByCommunityIdData,
   GetApiV1ModLogByCommunityIdErrors,
   GetApiV1ModLogByCommunityIdResponses,
@@ -206,12 +220,23 @@ import type {
   GetApiV1NotificationResponses,
   GetApiV1NotificationUnreadCountData,
   GetApiV1NotificationUnreadCountResponses,
+  GetApiV1OnboardingMeData,
+  GetApiV1OnboardingMeResponses,
   GetApiV1PostByIdData,
   GetApiV1PostByIdErrors,
   GetApiV1PostByIdResponses,
   GetApiV1PostInsightsByPostIdData,
   GetApiV1PostInsightsByPostIdErrors,
   GetApiV1PostInsightsByPostIdResponses,
+  GetApiV1PostVoteByPostIdDownvotersData,
+  GetApiV1PostVoteByPostIdDownvotersErrors,
+  GetApiV1PostVoteByPostIdDownvotersResponses,
+  GetApiV1PostVoteByPostIdDownvoteSummaryData,
+  GetApiV1PostVoteByPostIdDownvoteSummaryErrors,
+  GetApiV1PostVoteByPostIdDownvoteSummaryResponses,
+  GetApiV1PostVoteByPostIdUpvotersData,
+  GetApiV1PostVoteByPostIdUpvotersErrors,
+  GetApiV1PostVoteByPostIdUpvotersResponses,
   GetApiV1RemovalReasonByCommunityIdData,
   GetApiV1RemovalReasonByCommunityIdErrors,
   GetApiV1RemovalReasonByCommunityIdResponses,
@@ -304,12 +329,18 @@ import type {
   PatchApiV1FlairUserTemplatesByIdData,
   PatchApiV1FlairUserTemplatesByIdErrors,
   PatchApiV1FlairUserTemplatesByIdResponses,
+  PatchApiV1InviteCodeByIdNicknameData,
+  PatchApiV1InviteCodeByIdNicknameErrors,
+  PatchApiV1InviteCodeByIdNicknameResponses,
   PatchApiV1ModSavedResponseResponseByIdData,
   PatchApiV1ModSavedResponseResponseByIdErrors,
   PatchApiV1ModSavedResponseResponseByIdResponses,
   PatchApiV1ModTeamByCommunityIdModByUserIdData,
   PatchApiV1ModTeamByCommunityIdModByUserIdErrors,
   PatchApiV1ModTeamByCommunityIdModByUserIdResponses,
+  PatchApiV1OnboardingData,
+  PatchApiV1OnboardingErrors,
+  PatchApiV1OnboardingResponses,
   PatchApiV1PostByIdData,
   PatchApiV1PostByIdErrors,
   PatchApiV1PostByIdResponses,
@@ -390,6 +421,9 @@ import type {
   PostApiV1FlairByCommunityIdUserTemplatesData,
   PostApiV1FlairByCommunityIdUserTemplatesErrors,
   PostApiV1FlairByCommunityIdUserTemplatesResponses,
+  PostApiV1InviteCodeData,
+  PostApiV1InviteCodeErrors,
+  PostApiV1InviteCodeResponses,
   PostApiV1MediaAvatarConfirmData,
   PostApiV1MediaAvatarConfirmErrors,
   PostApiV1MediaAvatarConfirmResponses,
@@ -480,6 +514,9 @@ import type {
   PostApiV1NotificationByIdReadResponses,
   PostApiV1NotificationReadAllData,
   PostApiV1NotificationReadAllResponses,
+  PostApiV1OnboardingData,
+  PostApiV1OnboardingErrors,
+  PostApiV1OnboardingResponses,
   PostApiV1PostActionShareByPostIdData,
   PostApiV1PostActionShareByPostIdErrors,
   PostApiV1PostActionShareByPostIdResponses,
@@ -597,6 +634,117 @@ export const postApiV1AuthLogout = <ThrowOnError extends boolean = false>(
     PostApiV1AuthLogoutErrors,
     ThrowOnError
   >({ url: "/api/v1/auth/logout", ...options })
+
+/**
+ * The current user's onboarding application, if any
+ */
+export const getApiV1OnboardingMe = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiV1OnboardingMeData, ThrowOnError>,
+): RequestResult<GetApiV1OnboardingMeResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetApiV1OnboardingMeResponses, unknown, ThrowOnError>({
+    url: "/api/v1/onboarding/me",
+    ...options,
+  })
+
+/**
+ * Edit the four onboarding links; editing after a rejection resubmits the application
+ */
+export const patchApiV1Onboarding = <ThrowOnError extends boolean = false>(
+  options?: Options<PatchApiV1OnboardingData, ThrowOnError>,
+): RequestResult<PatchApiV1OnboardingResponses, PatchApiV1OnboardingErrors, ThrowOnError> =>
+  (options?.client ?? client).patch<
+    PatchApiV1OnboardingResponses,
+    PatchApiV1OnboardingErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/onboarding",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  })
+
+/**
+ * Submit the onboarding application: an invite code plus four required public links
+ */
+export const postApiV1Onboarding = <ThrowOnError extends boolean = false>(
+  options?: Options<PostApiV1OnboardingData, ThrowOnError>,
+): RequestResult<PostApiV1OnboardingResponses, PostApiV1OnboardingErrors, ThrowOnError> =>
+  (options?.client ?? client).post<
+    PostApiV1OnboardingResponses,
+    PostApiV1OnboardingErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/onboarding",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  })
+
+/**
+ * The current user's invite codes and the referrals they brought in
+ */
+export const getApiV1InviteCode = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiV1InviteCodeData, ThrowOnError>,
+): RequestResult<GetApiV1InviteCodeResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetApiV1InviteCodeResponses, unknown, ThrowOnError>({
+    url: "/api/v1/invite-code",
+    ...options,
+  })
+
+/**
+ * Generate a new single-use invite code
+ */
+export const postApiV1InviteCode = <ThrowOnError extends boolean = false>(
+  options?: Options<PostApiV1InviteCodeData, ThrowOnError>,
+): RequestResult<PostApiV1InviteCodeResponses, PostApiV1InviteCodeErrors, ThrowOnError> =>
+  (options?.client ?? client).post<
+    PostApiV1InviteCodeResponses,
+    PostApiV1InviteCodeErrors,
+    ThrowOnError
+  >({ url: "/api/v1/invite-code", ...options })
+
+/**
+ * Revoke an unused invite code
+ */
+export const deleteApiV1InviteCodeById = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteApiV1InviteCodeByIdData, ThrowOnError>,
+): RequestResult<
+  DeleteApiV1InviteCodeByIdResponses,
+  DeleteApiV1InviteCodeByIdErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    DeleteApiV1InviteCodeByIdResponses,
+    DeleteApiV1InviteCodeByIdErrors,
+    ThrowOnError
+  >({ url: "/api/v1/invite-code/{id}", ...options })
+
+/**
+ * Set a nickname for the referral who used this invite code
+ */
+export const patchApiV1InviteCodeByIdNickname = <ThrowOnError extends boolean = false>(
+  options: Options<PatchApiV1InviteCodeByIdNicknameData, ThrowOnError>,
+): RequestResult<
+  PatchApiV1InviteCodeByIdNicknameResponses,
+  PatchApiV1InviteCodeByIdNicknameErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).patch<
+    PatchApiV1InviteCodeByIdNicknameResponses,
+    PatchApiV1InviteCodeByIdNicknameErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/invite-code/{id}/nickname",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  })
 
 /**
  * Public profile for a username
@@ -1868,7 +2016,7 @@ export const patchApiV1CommentById = <ThrowOnError extends boolean = false>(
   })
 
 /**
- * Upvote, downvote, or clear a vote on a comment
+ * Give credit to a comment, downvote it with one or more stated categories, or clear the vote
  */
 export const putApiV1CommentVoteByCommentId = <ThrowOnError extends boolean = false>(
   options: Options<PutApiV1CommentVoteByCommentIdData, ThrowOnError>,
@@ -1889,6 +2037,54 @@ export const putApiV1CommentVoteByCommentId = <ThrowOnError extends boolean = fa
       ...options.headers,
     },
   })
+
+/**
+ * Users who gave credit to a comment
+ */
+export const getApiV1CommentVoteByCommentIdUpvoters = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1CommentVoteByCommentIdUpvotersData, ThrowOnError>,
+): RequestResult<
+  GetApiV1CommentVoteByCommentIdUpvotersResponses,
+  GetApiV1CommentVoteByCommentIdUpvotersErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1CommentVoteByCommentIdUpvotersResponses,
+    GetApiV1CommentVoteByCommentIdUpvotersErrors,
+    ThrowOnError
+  >({ url: "/api/v1/comment-vote/{commentId}/upvoters", ...options })
+
+/**
+ * Users who downvoted a comment, optionally filtered by category
+ */
+export const getApiV1CommentVoteByCommentIdDownvoters = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1CommentVoteByCommentIdDownvotersData, ThrowOnError>,
+): RequestResult<
+  GetApiV1CommentVoteByCommentIdDownvotersResponses,
+  GetApiV1CommentVoteByCommentIdDownvotersErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1CommentVoteByCommentIdDownvotersResponses,
+    GetApiV1CommentVoteByCommentIdDownvotersErrors,
+    ThrowOnError
+  >({ url: "/api/v1/comment-vote/{commentId}/downvoters", ...options })
+
+/**
+ * Per-category downvote counts and the caller's own categories
+ */
+export const getApiV1CommentVoteByCommentIdDownvoteSummary = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1CommentVoteByCommentIdDownvoteSummaryData, ThrowOnError>,
+): RequestResult<
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses,
+  GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1CommentVoteByCommentIdDownvoteSummaryResponses,
+    GetApiV1CommentVoteByCommentIdDownvoteSummaryErrors,
+    ThrowOnError
+  >({ url: "/api/v1/comment-vote/{commentId}/downvote-summary", ...options })
 
 /**
  * Delete a post (author only)
@@ -1964,7 +2160,7 @@ export const getApiV1PostInsightsByPostId = <ThrowOnError extends boolean = fals
   >({ url: "/api/v1/post-insights/{postId}", ...options })
 
 /**
- * Upvote, downvote, or clear a vote on a post
+ * Give credit to a post, downvote it with one or more stated categories, or clear the vote
  */
 export const putApiV1PostVoteByPostId = <ThrowOnError extends boolean = false>(
   options: Options<PutApiV1PostVoteByPostIdData, ThrowOnError>,
@@ -1981,6 +2177,54 @@ export const putApiV1PostVoteByPostId = <ThrowOnError extends boolean = false>(
       ...options.headers,
     },
   })
+
+/**
+ * Users who gave credit to a post
+ */
+export const getApiV1PostVoteByPostIdUpvoters = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1PostVoteByPostIdUpvotersData, ThrowOnError>,
+): RequestResult<
+  GetApiV1PostVoteByPostIdUpvotersResponses,
+  GetApiV1PostVoteByPostIdUpvotersErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1PostVoteByPostIdUpvotersResponses,
+    GetApiV1PostVoteByPostIdUpvotersErrors,
+    ThrowOnError
+  >({ url: "/api/v1/post-vote/{postId}/upvoters", ...options })
+
+/**
+ * Users who downvoted a post, optionally filtered by category
+ */
+export const getApiV1PostVoteByPostIdDownvoters = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1PostVoteByPostIdDownvotersData, ThrowOnError>,
+): RequestResult<
+  GetApiV1PostVoteByPostIdDownvotersResponses,
+  GetApiV1PostVoteByPostIdDownvotersErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1PostVoteByPostIdDownvotersResponses,
+    GetApiV1PostVoteByPostIdDownvotersErrors,
+    ThrowOnError
+  >({ url: "/api/v1/post-vote/{postId}/downvoters", ...options })
+
+/**
+ * Per-category downvote counts and the caller's own categories
+ */
+export const getApiV1PostVoteByPostIdDownvoteSummary = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1PostVoteByPostIdDownvoteSummaryData, ThrowOnError>,
+): RequestResult<
+  GetApiV1PostVoteByPostIdDownvoteSummaryResponses,
+  GetApiV1PostVoteByPostIdDownvoteSummaryErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1PostVoteByPostIdDownvoteSummaryResponses,
+    GetApiV1PostVoteByPostIdDownvoteSummaryErrors,
+    ThrowOnError
+  >({ url: "/api/v1/post-vote/{postId}/downvote-summary", ...options })
 
 /**
  * Feed of posts for a community

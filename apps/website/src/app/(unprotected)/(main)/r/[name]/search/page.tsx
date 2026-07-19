@@ -80,7 +80,7 @@ export default async function CommunitySearchPage({
           href={`/search?q=${encodeURIComponent(q)}`}
           className="mb-3 inline-block text-xs font-medium text-primary hover:underline"
         >
-          Show results from all of ReadIt →
+          Show results from all of ToYourCredit →
         </Link>
       ) : null}
 

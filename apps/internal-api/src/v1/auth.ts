@@ -14,6 +14,12 @@ const AuthMeResponseT = Type.Object({
       name: Nullable(Type.String()),
       email: Type.String(),
       isAdmin: Type.Boolean(),
+      verificationStatus: Type.Union([
+        Type.Literal("unverified"),
+        Type.Literal("pending"),
+        Type.Literal("verified"),
+        Type.Literal("rejected"),
+      ]),
     }),
   ),
 })

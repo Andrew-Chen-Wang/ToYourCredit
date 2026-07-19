@@ -9,7 +9,7 @@ import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
-import { authMiddleware } from "../middleware"
+import { authMiddleware, verifiedMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse } from "../utils/common.serializer"
 import { throwBadRequest, throwNotFound } from "../utils/http-exception"
 import {
@@ -82,6 +82,7 @@ const app = new Hono()
   )
   .post(
     "/:communityId/join",
+    verifiedMiddleware,
     describeRoute({
       description: "Join a public community, or request to join a restricted/private one",
       responses: {
@@ -139,6 +140,7 @@ const app = new Hono()
   )
   .post(
     "/:communityId/leave",
+    verifiedMiddleware,
     describeRoute({
       description: "Leave a community",
       responses: {
@@ -163,6 +165,7 @@ const app = new Hono()
   )
   .patch(
     "/:communityId/membership",
+    verifiedMiddleware,
     describeRoute({
       description: "Update the current user's membership preferences",
       responses: {

@@ -21,11 +21,6 @@ export function chipClass(active: boolean): string {
   )
 }
 
-export function nextVoteValue(current: number, direction: 1 | -1): 1 | 0 | -1 {
-  if (direction === 1) return current === 1 ? 0 : 1
-  return current === -1 ? 0 : -1
-}
-
 export function applyVoteToCache(
   data: InfiniteData<SearchPageData> | undefined,
   postId: string,
@@ -98,7 +93,7 @@ export function ProfileResultCard({ profile }: { profile: ProfileResult }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">u/{profile.username}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {profile.karma} karma
+          {profile.karma} credit
           {profile.about ? ` · ${markdownToText(profile.about, 80)}` : null}
         </p>
       </div>
