@@ -1,3 +1,4 @@
+import { dedupeBy } from "@frontends/dashboard/lib/dedupe"
 import {
   useInfiniteQuery,
   useMutation,
@@ -166,7 +167,9 @@ export function OverviewFeed({ username }: { username: string }) {
     }
   }, [list.hasNextPage, list.isFetchingNextPage, list])
 
-  const allItems = list.data?.pages.flatMap((p) => p.data) ?? []
+  const allItems = dedupeBy(list.data?.pages.flatMap((p) => p.data) ?? [], (item) =>
+    item.kind === "post" ? `post:${item.post.id}` : `comment:${item.comment.id}`,
+  )
   // The overview endpoint returns newest-first; the content-type filter is applied
   // client-side (the endpoint itself takes only a cursor).
   const items =

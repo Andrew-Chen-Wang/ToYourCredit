@@ -1,3 +1,4 @@
+import { dedupeById } from "@frontends/dashboard/lib/dedupe"
 import {
   useInfiniteQuery,
   useMutation,
@@ -332,7 +333,7 @@ export function PostFeed({
     }
   }, [feed.hasNextPage, feed.isFetchingNextPage, feed])
 
-  const posts = feed.data?.pages.flatMap((p) => p.data) ?? []
+  const posts = dedupeById(feed.data?.pages.flatMap((p) => p.data) ?? [])
   const activeSort = sorts.find((s) => s.value === sort) ?? sorts[0]
 
   return (

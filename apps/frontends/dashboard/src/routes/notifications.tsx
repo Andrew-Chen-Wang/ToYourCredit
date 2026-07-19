@@ -1,3 +1,4 @@
+import { dedupeById } from "@frontends/dashboard/lib/dedupe"
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Button, buttonVariants } from "@ui/base/ui/button"
@@ -80,7 +81,7 @@ function NotificationsPage() {
     },
   })
 
-  const all = query.data?.pages.flatMap((p) => p.data) ?? []
+  const all = dedupeById(query.data?.pages.flatMap((p) => p.data) ?? [])
   // Client-side filtering across already-loaded pages. Unread is derived from
   // the loaded set, so "Unread" may under-count until more pages are loaded.
   const notifications = filter === "unread" ? all.filter((n) => !n.isRead) : all

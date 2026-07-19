@@ -1,3 +1,4 @@
+import { dedupeById } from "@frontends/dashboard/lib/dedupe"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
@@ -126,7 +127,7 @@ export function CommentWithPostList({
     }
   }, [list.hasNextPage, list.isFetchingNextPage, list])
 
-  const comments = list.data?.pages.flatMap((p) => p.comments) ?? []
+  const comments = dedupeById(list.data?.pages.flatMap((p) => p.comments) ?? [])
 
   if (list.isLoading) {
     return (

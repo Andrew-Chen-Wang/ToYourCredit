@@ -1,3 +1,4 @@
+import { dedupeById } from "@frontends/dashboard/lib/dedupe"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
@@ -69,7 +70,7 @@ function ModLogInner({ communityId, name }: { communityId: string; name: string 
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   })
 
-  const entries = (query.data?.pages.flatMap((p) => p.data) ?? []) as LogEntry[]
+  const entries = dedupeById((query.data?.pages.flatMap((p) => p.data) ?? []) as LogEntry[])
 
   if (query.isLoading) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading...</p>

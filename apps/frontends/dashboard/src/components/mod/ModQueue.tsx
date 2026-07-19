@@ -1,3 +1,4 @@
+import { dedupeBy } from "@frontends/dashboard/lib/dedupe"
 import {
   useInfiniteQuery,
   useMutation,
@@ -542,7 +543,10 @@ function QueueTabPanel({
     })
   }
 
-  const allItems = query.data?.pages.flatMap((p) => p.data) ?? []
+  const allItems = dedupeBy(
+    query.data?.pages.flatMap((p) => p.data) ?? [],
+    (it) => `${it.targetType}:${it.post?.id ?? it.comment?.id ?? ""}`,
+  )
   // Client-side filter/sort until the backend supports these params (see TODO above).
   const items = allItems
     .filter((it) => {

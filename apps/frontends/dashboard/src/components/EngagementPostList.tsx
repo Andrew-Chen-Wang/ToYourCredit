@@ -1,3 +1,4 @@
+import { dedupeById } from "@frontends/dashboard/lib/dedupe"
 import {
   useInfiniteQuery,
   useMutation,
@@ -134,7 +135,7 @@ export function EngagementPostList({
     }
   }, [list.hasNextPage, list.isFetchingNextPage, list])
 
-  const posts = list.data?.pages.flatMap((p) => p.posts) ?? []
+  const posts = dedupeById(list.data?.pages.flatMap((p) => p.posts) ?? [])
 
   if (list.isLoading) return <PostFeedSkeleton variant={view} />
   if (list.isError) {

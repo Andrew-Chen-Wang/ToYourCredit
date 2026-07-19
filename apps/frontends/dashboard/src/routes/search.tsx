@@ -1,3 +1,4 @@
+import { dedupeBy, dedupeById } from "@frontends/dashboard/lib/dedupe"
 import {
   type InfiniteData,
   useInfiniteQuery,
@@ -204,10 +205,13 @@ function SearchPage() {
 
   const pages = search.data?.pages ?? []
   const total = pages[0]?.total ?? 0
-  const posts = pages.flatMap((p) => p.posts)
-  const comments = pages.flatMap((p) => p.comments)
-  const communities = pages.flatMap((p) => p.communities)
-  const profiles = pages.flatMap((p) => p.profiles)
+  const posts = dedupeById(pages.flatMap((p) => p.posts))
+  const comments = dedupeBy(
+    pages.flatMap((p) => p.comments),
+    (c) => c.comment.id,
+  )
+  const communities = dedupeById(pages.flatMap((p) => p.communities))
+  const profiles = dedupeById(pages.flatMap((p) => p.profiles))
 
   const hasQuery = params.q.trim().length > 0
   const isGrid = params.type === "communities"
