@@ -7,6 +7,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import "@frontends/dashboard/app.css"
 import { routeTree } from "@frontends/dashboard/routeTree.gen"
+import { NotFoundPage } from "@frontends/dashboard/components/NotFoundPage"
 import { baseUrl } from "@lib/api-client/index"
 
 client.setConfig({ baseUrl, credentials: "include" })
@@ -18,7 +19,7 @@ const queryClient = new QueryClient({
   },
 })
 
-const router = createRouter({ routeTree, basepath: "/" })
+const router = createRouter({ routeTree, basepath: "/", defaultNotFoundComponent: NotFoundPage })
 
 declare module "@tanstack/react-router" {
   interface Register {
