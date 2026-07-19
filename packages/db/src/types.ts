@@ -315,6 +315,7 @@ export interface InviteCode {
   createdAt: Generated<Timestamp>
   createdByUserId: string
   id: string
+  isSuperuser: Generated<boolean>
   referralNickname: string | null
   revokedAt: Timestamp | null
   usedAt: Timestamp | null

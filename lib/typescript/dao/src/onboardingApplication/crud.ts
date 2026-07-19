@@ -11,18 +11,22 @@ export interface OnboardingLinks {
 }
 
 export type SubmitApplicationResult =
-  | { ok: true; application: Selectable<DB["onboardingApplication"]> }
-  | { ok: false; reason: "INVALID_CODE" | "ALREADY_SUBMITTED" }
+  | { ok: true; superuser: false; application: Selectable<DB["onboardingApplication"]> }
+  /** A superuser bypass code was redeemed: no application row, user auto-verified. */
+  | { ok: true; superuser: true }
+  | { ok: false; reason: "INVALID_CODE" | "ALREADY_SUBMITTED" | "LINKS_REQUIRED" }
 
 export type ReviewApplicationResult =
   | { ok: true; application: Selectable<DB["onboardingApplication"]> }
   | { ok: false; reason: "NOT_PENDING" }
 
+class LinksRequiredError extends Error {}
+
 export function crudOnboardingApplication(db: Kysely<DB>) {
   async function submit(
     userId: string,
     inviteCode: string,
-    links: OnboardingLinks,
+    links: OnboardingLinks | null,
   ): Promise<SubmitApplicationResult> {
     const existing = await db
       .selectFrom("onboardingApplication")
@@ -31,24 +35,45 @@ export function crudOnboardingApplication(db: Kysely<DB>) {
       .executeTakeFirst()
     if (existing) return { ok: false, reason: "ALREADY_SUBMITTED" }
 
-    return await db.transaction().execute(async (trx) => {
-      const inviteCodeId = await crudInviteCode(trx).consumeCode(inviteCode, userId)
-      if (!inviteCodeId) return { ok: false, reason: "INVALID_CODE" as const }
+    return await db
+      .transaction()
+      .execute(async (trx) => {
+        const consumed = await crudInviteCode(trx).consumeCode(inviteCode, userId)
+        if (!consumed) return { ok: false as const, reason: "INVALID_CODE" as const }
 
-      const application = await trx
-        .insertInto("onboardingApplication")
-        .values({ id: v7(), userId, inviteCodeId, ...links })
-        .returningAll()
-        .executeTakeFirstOrThrow()
+        if (consumed.isSuperuser) {
+          // Admin bypass: no application to review, straight to verified.
+          await trx
+            .updateTable("user")
+            .set({ verificationStatus: "verified" })
+            .where("id", "=", userId)
+            .execute()
+          return { ok: true as const, superuser: true as const }
+        }
 
-      await trx
-        .updateTable("user")
-        .set({ verificationStatus: "pending" })
-        .where("id", "=", userId)
-        .execute()
+        // Rolls back the code consumption when a normal code arrives without links.
+        if (!links) throw new LinksRequiredError()
 
-      return { ok: true, application }
-    })
+        const application = await trx
+          .insertInto("onboardingApplication")
+          .values({ id: v7(), userId, inviteCodeId: consumed.id, ...links })
+          .returningAll()
+          .executeTakeFirstOrThrow()
+
+        await trx
+          .updateTable("user")
+          .set({ verificationStatus: "pending" })
+          .where("id", "=", userId)
+          .execute()
+
+        return { ok: true as const, superuser: false as const, application }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof LinksRequiredError) {
+          return { ok: false as const, reason: "LINKS_REQUIRED" as const }
+        }
+        throw error
+      })
   }
 
   async function updateLinks(

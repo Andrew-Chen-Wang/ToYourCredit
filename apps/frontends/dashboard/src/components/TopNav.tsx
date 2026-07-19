@@ -26,12 +26,13 @@ import { useTheme, type Theme } from "@ui/spa-shared/theme"
 import { SearchSuggest } from "@frontends/dashboard/components/SearchSuggest"
 import { mediaUrl } from "@frontends/dashboard/lib/mediaUrl"
 import {
+  getApiV1AuthMeOptions,
   getApiV1UserMeOptions,
   getApiV1UserMeSettingsOptions,
   patchApiV1UserMeSettingsMutation,
   postApiV1AuthLogoutMutation,
 } from "@lib/api-client/generated/@tanstack/react-query.gen"
-import { LogOut, Menu, Monitor, Moon, Plus, Settings, Sun, User } from "lucide-react"
+import { LogOut, Menu, Monitor, Moon, Plus, Settings, Sun, User, UserPlus } from "lucide-react"
 import { useState } from "react"
 import { ChatButton } from "@frontends/dashboard/components/ChatButton"
 import { NotificationBell } from "@frontends/dashboard/components/NotificationBell"
@@ -120,6 +121,9 @@ export function TopNav() {
     },
   })
 
+  const { data: me } = useQuery(getApiV1AuthMeOptions())
+  const isVerified = me?.user?.verificationStatus === "verified" || me?.user?.isAdmin === true
+
   const initial = (user?.displayName ?? user?.username ?? "?").charAt(0).toUpperCase()
 
   return (
@@ -150,6 +154,18 @@ export function TopNav() {
 
         {/* Right zone: actions */}
         <div className="flex flex-1 items-center justify-end gap-1">
+          {isVerified ? (
+            <Link
+              to="/referrals"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "hidden gap-1.5 md:inline-flex",
+              )}
+            >
+              <UserPlus className="size-4" />
+              Invite
+            </Link>
+          ) : null}
           <ChatButton />
           <NotificationBell />
           <Link

@@ -42,6 +42,7 @@ export function fetchInviteCode(db: Kysely<DB>) {
         `.as("referralNumber"),
       ])
       .where("inviteCode.createdByUserId", "=", userId)
+      .where("inviteCode.isSuperuser", "=", false)
       .orderBy("inviteCode.createdAt", "desc")
       .execute()
 
@@ -80,9 +81,47 @@ export function fetchInviteCode(db: Kysely<DB>) {
           .as("active"),
       ])
       .where("createdByUserId", "=", userId)
+      .where("isSuperuser", "=", false)
       .executeTakeFirstOrThrow()
     return { active: Number(counts.active), total: Number(counts.total) }
   }
 
-  return { listByCreator, countByCreator }
+  /** Status of a code without consuming it (the onboarding modal's Next check). */
+  async function getByCode(
+    code: string,
+  ): Promise<{ id: string; isSuperuser: boolean; active: boolean } | undefined> {
+    const row = await db
+      .selectFrom("inviteCode")
+      .select(["id", "isSuperuser", "usedByUserId", "revokedAt"])
+      .where("code", "=", code)
+      .executeTakeFirst()
+    if (!row) return undefined
+    return {
+      id: row.id,
+      isSuperuser: row.isSuperuser,
+      active: row.usedByUserId === null && row.revokedAt === null,
+    }
+  }
+
+  /** Admin view: every superuser bypass code with creator and redeemer. */
+  async function listSuperuserCodes() {
+    return await db
+      .selectFrom("inviteCode")
+      .leftJoin("user as redeemer", "redeemer.id", "inviteCode.usedByUserId")
+      .innerJoin("user as creator", "creator.id", "inviteCode.createdByUserId")
+      .select([
+        "inviteCode.id",
+        "inviteCode.code",
+        "inviteCode.createdAt",
+        "inviteCode.usedAt",
+        "inviteCode.revokedAt",
+        "creator.username as createdByUsername",
+        "redeemer.username as usedByUsername",
+      ])
+      .where("inviteCode.isSuperuser", "=", true)
+      .orderBy("inviteCode.createdAt", "desc")
+      .execute()
+  }
+
+  return { listByCreator, countByCreator, getByCode, listSuperuserCodes }
 }

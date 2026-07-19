@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Badge } from "@ui/base/ui/badge"
 import { Button } from "@ui/base/ui/button"
@@ -8,8 +8,11 @@ import { LoadingButton } from "@ui/base/ui/loading-button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ui/base/ui/table"
 import { Textarea } from "@ui/base/ui/textarea"
 import {
+  getApiAdminInviteCodeOptions,
+  getApiAdminInviteCodeQueryKey,
   getApiAdminOnboardingInfiniteOptions,
   getApiAdminOnboardingInfiniteQueryKey,
+  postApiAdminInviteCodeMutation,
   postApiAdminOnboardingByIdApproveMutation,
   postApiAdminOnboardingByIdRejectMutation,
 } from "@frontends/admin/lib/adminApi"
@@ -28,6 +31,96 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+}
+
+function SuperuserCodesCard() {
+  const queryClient = useQueryClient()
+  const { data, isLoading } = useQuery(getApiAdminInviteCodeOptions())
+  const codes = data?.data ?? []
+
+  const createMutation = useMutation({
+    ...postApiAdminInviteCodeMutation(),
+    onSuccess: ({ code }) => {
+      toast.success(`Superuser code created: ${code}`)
+      void queryClient.invalidateQueries({ queryKey: getApiAdminInviteCodeQueryKey() })
+    },
+    onError: () => toast.error("Could not create superuser code"),
+  })
+
+  return (
+    <div className="mb-8">
+      <div className="mb-2 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Superuser invite codes</h2>
+          <p className="text-sm text-muted-foreground">
+            Single-use codes that skip the four-link application and auto-verify the redeemer.
+          </p>
+        </div>
+        <LoadingButton
+          loading={createMutation.isPending}
+          onClick={() => {
+            createMutation.mutate({})
+          }}
+        >
+          Generate code
+        </LoadingButton>
+      </div>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Code</TableHead>
+              <TableHead>Created by</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Redeemed by</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : codes.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No superuser codes yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              codes.map((code) => (
+                <TableRow key={code.id}>
+                  <TableCell className="font-mono text-xs">
+                    <button
+                      type="button"
+                      className="hover:underline"
+                      title="Copy code"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(code.code)
+                        toast.success("Code copied")
+                      }}
+                    >
+                      {code.code}
+                    </button>
+                  </TableCell>
+                  <TableCell>u/{code.createdByUsername}</TableCell>
+                  <TableCell>{new Date(code.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {code.usedByUsername ? (
+                      <span>u/{code.usedByUsername}</span>
+                    ) : (
+                      <Badge variant="secondary">unused</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
 }
 
 interface RejectTarget {
@@ -78,6 +171,8 @@ function OnboardingPage() {
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Onboarding</h1>
       </div>
+
+      <SuperuserCodesCard />
 
       <div className="mb-4 flex gap-2">
         {STATUS_FILTERS.map((filter) => (

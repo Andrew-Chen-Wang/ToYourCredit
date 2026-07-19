@@ -199,6 +199,7 @@ import {
   postApiV1NotificationByIdRead,
   postApiV1NotificationReadAll,
   postApiV1Onboarding,
+  postApiV1OnboardingCheckCode,
   postApiV1Post,
   postApiV1PostActionShareByPostId,
   postApiV1RemovalReasonByCommunityId,
@@ -742,6 +743,8 @@ import type {
   PostApiV1NotificationByIdReadResponse,
   PostApiV1NotificationReadAllData,
   PostApiV1NotificationReadAllResponse,
+  PostApiV1OnboardingCheckCodeData,
+  PostApiV1OnboardingCheckCodeResponse,
   PostApiV1OnboardingData,
   PostApiV1OnboardingError,
   PostApiV1OnboardingResponse,
@@ -939,6 +942,33 @@ export const getApiV1OnboardingMeOptions = (options?: Options<GetApiV1Onboarding
   })
 
 /**
+ * Check an invite code before submitting: whether it is redeemable and whether it is an admin bypass code that skips the four links
+ */
+export const postApiV1OnboardingCheckCodeMutation = (
+  options?: Partial<Options<PostApiV1OnboardingCheckCodeData>>,
+): UseMutationOptions<
+  PostApiV1OnboardingCheckCodeResponse,
+  DefaultError,
+  Options<PostApiV1OnboardingCheckCodeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiV1OnboardingCheckCodeResponse,
+    DefaultError,
+    Options<PostApiV1OnboardingCheckCodeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiV1OnboardingCheckCode({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
  * Edit the four onboarding links; editing after a rejection resubmits the application
  */
 export const patchApiV1OnboardingMutation = (
@@ -966,7 +996,7 @@ export const patchApiV1OnboardingMutation = (
 }
 
 /**
- * Submit the onboarding application: an invite code plus four required public links
+ * Submit the onboarding application: an invite code plus four required public links (admin bypass codes skip the links and auto-verify)
  */
 export const postApiV1OnboardingMutation = (
   options?: Partial<Options<PostApiV1OnboardingData>>,

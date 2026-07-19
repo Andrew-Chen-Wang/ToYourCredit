@@ -3,6 +3,8 @@
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from "./client"
 import { client } from "./client.gen"
 import type {
+  GetApiAdminInviteCodeData,
+  GetApiAdminInviteCodeResponses,
   GetApiAdminOnboardingData,
   GetApiAdminOnboardingResponses,
   GetApiAdminPostsData,
@@ -11,6 +13,8 @@ import type {
   GetApiAdminStatsResponses,
   GetApiAdminUsersData,
   GetApiAdminUsersResponses,
+  PostApiAdminInviteCodeData,
+  PostApiAdminInviteCodeResponses,
   PostApiAdminOnboardingByIdApproveData,
   PostApiAdminOnboardingByIdApproveErrors,
   PostApiAdminOnboardingByIdApproveResponses,
@@ -201,4 +205,26 @@ export const postApiAdminOnboardingByIdReject = <ThrowOnError extends boolean = 
       "Content-Type": "application/json",
       ...options.headers,
     },
+  })
+
+/**
+ * List superuser bypass invite codes
+ */
+export const getApiAdminInviteCode = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiAdminInviteCodeData, ThrowOnError>,
+): RequestResult<GetApiAdminInviteCodeResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetApiAdminInviteCodeResponses, unknown, ThrowOnError>({
+    url: "/api/admin/invite-code",
+    ...options,
+  })
+
+/**
+ * Create a single-use superuser bypass invite code: redeeming it skips the four-link application and auto-verifies the user
+ */
+export const postApiAdminInviteCode = <ThrowOnError extends boolean = false>(
+  options?: Options<PostApiAdminInviteCodeData, ThrowOnError>,
+): RequestResult<PostApiAdminInviteCodeResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<PostApiAdminInviteCodeResponses, unknown, ThrowOnError>({
+    url: "/api/admin/invite-code",
+    ...options,
   })

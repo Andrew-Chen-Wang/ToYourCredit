@@ -1,4 +1,4 @@
-import { crudOnboardingApplication, fetchOnboardingApplication } from "@lib/dao"
+import { crudOnboardingApplication, fetchInviteCode, fetchOnboardingApplication } from "@lib/dao"
 import type { DB } from "@template-nextjs/db"
 import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
@@ -10,6 +10,8 @@ import { ErrorSchemaResponse } from "../utils/common.serializer"
 import { ErrorCode } from "../utils/errors.enum"
 import { throwBadRequest, throwNotFound } from "../utils/http-exception"
 import {
+  onboardingCheckCodeSchemaRequest,
+  onboardingCheckCodeSchemaResponse,
   onboardingMeSchemaResponse,
   onboardingSchemaRequest,
   onboardingSchemaResponse,
@@ -50,10 +52,32 @@ const app = new Hono()
     },
   )
   .post(
+    "/check-code",
+    describeRoute({
+      description:
+        "Check an invite code before submitting: whether it is redeemable and whether it is an admin bypass code that skips the four links",
+      responses: {
+        200: {
+          description: "Code status",
+          content: { "application/json": { schema: resolver(onboardingCheckCodeSchemaResponse) } },
+        },
+      },
+    }),
+    validator("json", onboardingCheckCodeSchemaRequest),
+    async (c) => {
+      const { inviteCode } = c.req.valid("json")
+      const code = await fetchInviteCode(db).getByCode(inviteCode.trim().toUpperCase())
+      return c.json({
+        valid: code?.active === true,
+        superuser: code?.active === true && code.isSuperuser,
+      })
+    },
+  )
+  .post(
     "/",
     describeRoute({
       description:
-        "Submit the onboarding application: an invite code plus four required public links",
+        "Submit the onboarding application: an invite code plus four required public links (admin bypass codes skip the links and auto-verify)",
       responses: {
         201: {
           description: "Application submitted",
@@ -78,15 +102,20 @@ const app = new Hono()
         )
       }
 
+      const links =
+        body.profileLink && body.opinionLink && body.criticalThinkingLink && body.acceptWrongLink
+          ? {
+              profileLink: body.profileLink,
+              opinionLink: body.opinionLink,
+              criticalThinkingLink: body.criticalThinkingLink,
+              acceptWrongLink: body.acceptWrongLink,
+            }
+          : null
+
       const result = await crudOnboardingApplication(db).submit(
         user.id,
         body.inviteCode.trim().toUpperCase(),
-        {
-          profileLink: body.profileLink,
-          opinionLink: body.opinionLink,
-          criticalThinkingLink: body.criticalThinkingLink,
-          acceptWrongLink: body.acceptWrongLink,
-        },
+        links,
       )
       if (!result.ok) {
         if (result.reason === "ALREADY_SUBMITTED") {
@@ -96,12 +125,21 @@ const app = new Hono()
             ErrorCode.AlreadySubmitted,
           )
         }
+        if (result.reason === "LINKS_REQUIRED") {
+          return throwBadRequest(c, "All four links are required for this invite code")
+        }
         return throwBadRequest(c, "That invite code is not valid", ErrorCode.InviteCodeInvalid, {
           target: "inviteCode",
         })
       }
 
-      return c.json({ application: serializeApplication(result.application) }, 201)
+      if (result.superuser) {
+        return c.json({ application: null, superuser: true }, 201)
+      }
+      return c.json(
+        { application: serializeApplication(result.application), superuser: false },
+        201,
+      )
     },
   )
   .patch(

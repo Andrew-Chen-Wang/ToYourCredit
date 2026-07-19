@@ -5,10 +5,19 @@ const link = Type.String({ pattern: "^https?://\\S+$", minLength: 8, maxLength: 
 
 export const onboardingSchemaRequest = Type.Object({
   inviteCode: Type.String({ minLength: 1, maxLength: 50 }),
-  profileLink: link,
-  opinionLink: link,
-  criticalThinkingLink: link,
-  acceptWrongLink: link,
+  profileLink: Type.Optional(link),
+  opinionLink: Type.Optional(link),
+  criticalThinkingLink: Type.Optional(link),
+  acceptWrongLink: Type.Optional(link),
+})
+
+export const onboardingCheckCodeSchemaRequest = Type.Object({
+  inviteCode: Type.String({ minLength: 1, maxLength: 50 }),
+})
+
+export const onboardingCheckCodeSchemaResponse = Type.Object({
+  valid: Type.Boolean(),
+  superuser: Type.Boolean(),
 })
 
 export const onboardingUpdateSchemaRequest = Type.Object({
@@ -31,7 +40,8 @@ export const onboardingApplicationSchema = Type.Object({
 })
 
 export const onboardingSchemaResponse = Type.Object({
-  application: onboardingApplicationSchema,
+  application: Nullable(onboardingApplicationSchema),
+  superuser: Type.Boolean(),
 })
 
 export const onboardingMeSchemaResponse = Type.Object({

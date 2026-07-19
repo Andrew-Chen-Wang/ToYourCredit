@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { RegExpRouter } from "hono/router/reg-exp-router"
+import inviteCode from "./invite-code"
 import onboarding from "./onboarding"
 import post from "./post"
 import stats from "./stats"
@@ -13,5 +14,6 @@ const app = new Hono({
   .route("/posts", post)
   .route("/stats", stats)
   .route("/onboarding", onboarding)
+  .route("/invite-code", inviteCode)
 
 export default app

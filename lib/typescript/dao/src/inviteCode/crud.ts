@@ -46,6 +46,7 @@ export function crudInviteCode(db: Kysely<DB>) {
             .as("active"),
         ])
         .where("createdByUserId", "=", userId)
+        .where("isSuperuser", "=", false)
         .executeTakeFirstOrThrow()
 
       if (Number(counts.total) >= MAX_TOTAL_INVITE_CODES) {
@@ -64,7 +65,10 @@ export function crudInviteCode(db: Kysely<DB>) {
     })
   }
 
-  async function consumeCode(code: string, byUserId: string): Promise<string | undefined> {
+  async function consumeCode(
+    code: string,
+    byUserId: string,
+  ): Promise<{ id: string; isSuperuser: boolean } | undefined> {
     // Single guarded UPDATE: exactly one caller can win a given code, and the
     // partial unique index on used_by_user_id blocks a user consuming twice.
     const row = await db
@@ -73,9 +77,22 @@ export function crudInviteCode(db: Kysely<DB>) {
       .where("code", "=", code)
       .where("usedByUserId", "is", null)
       .where("revokedAt", "is", null)
-      .returning("id")
+      .returning(["id", "isSuperuser"])
       .executeTakeFirst()
-    return row?.id
+    return row
+  }
+
+  /**
+   * Admin-only: a single-use code that bypasses the four-link application and
+   * auto-verifies whoever redeems it. Not subject to the personal 3/9 caps and
+   * excluded from the personal referral list.
+   */
+  async function createSuperuserCode(adminUserId: string) {
+    return await db
+      .insertInto("inviteCode")
+      .values({ id: v7(), code: generateCode(), createdByUserId: adminUserId, isSuperuser: true })
+      .returningAll()
+      .executeTakeFirstOrThrow()
   }
 
   async function revoke(id: string, ownerUserId: string): Promise<boolean> {
@@ -103,5 +120,5 @@ export function crudInviteCode(db: Kysely<DB>) {
     return result !== undefined
   }
 
-  return { createInviteCode, consumeCode, revoke, setNickname }
+  return { createInviteCode, createSuperuserCode, consumeCode, revoke, setNickname }
 }

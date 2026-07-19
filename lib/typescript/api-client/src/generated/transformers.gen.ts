@@ -78,9 +78,11 @@ export const getApiV1OnboardingMeResponseTransformer = async (
 export const patchApiV1OnboardingResponseTransformer = async (
   data: any,
 ): Promise<PatchApiV1OnboardingResponse> => {
-  data.application.submittedAt = new Date(data.application.submittedAt)
-  if (data.application.reviewedAt) {
-    data.application.reviewedAt = new Date(data.application.reviewedAt)
+  if (data.application) {
+    data.application.submittedAt = new Date(data.application.submittedAt)
+    if (data.application.reviewedAt) {
+      data.application.reviewedAt = new Date(data.application.reviewedAt)
+    }
   }
   return data
 }
@@ -88,9 +90,11 @@ export const patchApiV1OnboardingResponseTransformer = async (
 export const postApiV1OnboardingResponseTransformer = async (
   data: any,
 ): Promise<PostApiV1OnboardingResponse> => {
-  data.application.submittedAt = new Date(data.application.submittedAt)
-  if (data.application.reviewedAt) {
-    data.application.reviewedAt = new Date(data.application.reviewedAt)
+  if (data.application) {
+    data.application.submittedAt = new Date(data.application.submittedAt)
+    if (data.application.reviewedAt) {
+      data.application.reviewedAt = new Date(data.application.reviewedAt)
+    }
   }
   return data
 }

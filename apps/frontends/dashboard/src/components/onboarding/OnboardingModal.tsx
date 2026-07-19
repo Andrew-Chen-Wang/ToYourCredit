@@ -11,8 +11,12 @@ import {
 } from "@ui/base/ui/dialog"
 import { Input } from "@ui/base/ui/input"
 import { Label } from "@ui/base/ui/label"
+import { LoadingButton } from "@ui/base/ui/loading-button"
 import { getApiV1AuthMeOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
-import { postApiV1Onboarding } from "@lib/api-client/generated/sdk.gen"
+import {
+  postApiV1Onboarding,
+  postApiV1OnboardingCheckCode,
+} from "@lib/api-client/generated/sdk.gen"
 import { toast } from "sonner"
 
 const LINK_FIELDS = [
@@ -51,13 +55,16 @@ function isHttpUrl(value: string): boolean {
 
 /**
  * Membership-application modal shown to signed-in users who have not yet
- * submitted their invite code + four required links. Dismissible, but reopens
- * on every navigation until the application is submitted.
+ * submitted their invite code + four required links. Two steps: the code first,
+ * then the links — admin superuser bypass codes skip the links entirely and
+ * auto-verify on Next. Dismissible, but reopens on every navigation until done.
  */
 export function OnboardingModal() {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(true)
+  const [step, setStep] = useState<"code" | "links">("code")
   const [inviteCode, setInviteCode] = useState("")
+  const [codeError, setCodeError] = useState<string | null>(null)
   const [links, setLinks] = useState<Record<LinkKey, string>>({
     profileLink: "",
     opinionLink: "",
@@ -72,13 +79,14 @@ export function OnboardingModal() {
   }, [routeKey])
 
   const submit = useMutation({
-    mutationFn: () =>
-      postApiV1Onboarding({
-        body: { inviteCode: inviteCode.trim(), ...links },
-        throwOnError: true,
-      }),
-    onSuccess: () => {
-      toast.success("Application submitted — an admin will review it soon")
+    mutationFn: (body: { inviteCode: string } & Partial<Record<LinkKey, string>>) =>
+      postApiV1Onboarding({ body, throwOnError: true }),
+    onSuccess: ({ data }) => {
+      toast.success(
+        data.superuser
+          ? "Welcome — your account is verified"
+          : "Application submitted — an admin will review it soon",
+      )
       void queryClient.invalidateQueries({ queryKey: getApiV1AuthMeOptions().queryKey })
     },
     onError: () => {
@@ -86,8 +94,32 @@ export function OnboardingModal() {
     },
   })
 
-  const valid =
-    inviteCode.trim().length > 0 && LINK_FIELDS.every((f) => isHttpUrl(links[f.key].trim()))
+  const checkCode = useMutation({
+    mutationFn: () =>
+      postApiV1OnboardingCheckCode({
+        body: { inviteCode: inviteCode.trim() },
+        throwOnError: true,
+      }),
+    onSuccess: ({ data }) => {
+      if (!data.valid) {
+        setCodeError("That invite code is not valid or was already used.")
+        return
+      }
+      if (data.superuser) {
+        // Admin bypass: no links needed, submit right away.
+        submit.mutate({ inviteCode: inviteCode.trim() })
+        return
+      }
+      setStep("links")
+    },
+    onError: () => {
+      setCodeError("Could not check that code. Try again.")
+    },
+  })
+
+  const codeReady = inviteCode.trim().length > 0
+  const linksValid = LINK_FIELDS.every((f) => isHttpUrl(links[f.key].trim()))
+  const busy = checkCode.isPending || submit.isPending
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,58 +132,105 @@ export function OnboardingModal() {
             vote.
           </DialogDescription>
         </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (valid && !submit.isPending) submit.mutate()
-          }}
-        >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="onboarding-invite-code">Invite code</Label>
-            <Input
-              id="onboarding-invite-code"
-              value={inviteCode}
-              onChange={(e) => {
-                setInviteCode(e.target.value)
-              }}
-              placeholder="XXXX-XXXX-XXXX"
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              A single-use code from an existing member.
-            </p>
-          </div>
-          {LINK_FIELDS.map((field) => (
-            <div key={field.key} className="flex flex-col gap-1.5">
-              <Label htmlFor={`onboarding-${field.key}`}>{field.label}</Label>
+
+        {step === "code" ? (
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (codeReady && !busy) {
+                setCodeError(null)
+                checkCode.mutate()
+              }
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="onboarding-invite-code">Invite code</Label>
               <Input
-                id={`onboarding-${field.key}`}
-                type="url"
-                value={links[field.key]}
+                id="onboarding-invite-code"
+                value={inviteCode}
                 onChange={(e) => {
-                  setLinks((prev) => ({ ...prev, [field.key]: e.target.value }))
+                  setInviteCode(e.target.value)
+                  setCodeError(null)
                 }}
-                placeholder="https://"
+                placeholder="XXXX-XXXX-XXXX"
+                autoComplete="off"
               />
-              <p className="text-xs text-muted-foreground">{field.hint}</p>
+              {codeError ? (
+                <p className="text-xs text-destructive">{codeError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  A single-use code from an existing member.
+                </p>
+              )}
             </div>
-          ))}
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setOpen(false)
-              }}
-            >
-              Later
-            </Button>
-            <Button type="submit" disabled={!valid || submit.isPending}>
-              {submit.isPending ? "Submitting…" : "Submit application"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setOpen(false)
+                }}
+              >
+                Later
+              </Button>
+              <LoadingButton type="submit" disabled={!codeReady} loading={busy}>
+                Next
+              </LoadingButton>
+            </div>
+          </form>
+        ) : (
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (linksValid && !busy) {
+                submit.mutate({ inviteCode: inviteCode.trim(), ...links })
+              }
+            }}
+          >
+            {LINK_FIELDS.map((field) => (
+              <div key={field.key} className="flex flex-col gap-1.5">
+                <Label htmlFor={`onboarding-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`onboarding-${field.key}`}
+                  type="url"
+                  value={links[field.key]}
+                  onChange={(e) => {
+                    setLinks((prev) => ({ ...prev, [field.key]: e.target.value }))
+                  }}
+                  placeholder="https://"
+                />
+                <p className="text-xs text-muted-foreground">{field.hint}</p>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setStep("code")
+                }}
+              >
+                Back
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                  }}
+                >
+                  Later
+                </Button>
+                <LoadingButton type="submit" disabled={!linksValid} loading={submit.isPending}>
+                  Submit application
+                </LoadingButton>
+              </div>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

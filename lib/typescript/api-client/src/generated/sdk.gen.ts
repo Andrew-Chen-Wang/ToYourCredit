@@ -517,6 +517,8 @@ import type {
   PostApiV1NotificationByIdReadResponses,
   PostApiV1NotificationReadAllData,
   PostApiV1NotificationReadAllResponses,
+  PostApiV1OnboardingCheckCodeData,
+  PostApiV1OnboardingCheckCodeResponses,
   PostApiV1OnboardingData,
   PostApiV1OnboardingErrors,
   PostApiV1OnboardingResponses,
@@ -650,6 +652,21 @@ export const getApiV1OnboardingMe = <ThrowOnError extends boolean = false>(
   })
 
 /**
+ * Check an invite code before submitting: whether it is redeemable and whether it is an admin bypass code that skips the four links
+ */
+export const postApiV1OnboardingCheckCode = <ThrowOnError extends boolean = false>(
+  options?: Options<PostApiV1OnboardingCheckCodeData, ThrowOnError>,
+): RequestResult<PostApiV1OnboardingCheckCodeResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<PostApiV1OnboardingCheckCodeResponses, unknown, ThrowOnError>({
+    url: "/api/v1/onboarding/check-code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  })
+
+/**
  * Edit the four onboarding links; editing after a rejection resubmits the application
  */
 export const patchApiV1Onboarding = <ThrowOnError extends boolean = false>(
@@ -669,7 +686,7 @@ export const patchApiV1Onboarding = <ThrowOnError extends boolean = false>(
   })
 
 /**
- * Submit the onboarding application: an invite code plus four required public links
+ * Submit the onboarding application: an invite code plus four required public links (admin bypass codes skip the links and auto-verify)
  */
 export const postApiV1Onboarding = <ThrowOnError extends boolean = false>(
   options?: Options<PostApiV1OnboardingData, ThrowOnError>,

@@ -10,11 +10,13 @@ import {
 
 import { client } from "../client.gen"
 import {
+  getApiAdminInviteCode,
   getApiAdminOnboarding,
   getApiAdminPosts,
   getApiAdminStats,
   getApiAdminUsers,
   type Options,
+  postApiAdminInviteCode,
   postApiAdminOnboardingByIdApprove,
   postApiAdminOnboardingByIdReject,
   postApiAdminPostsByIdRemove,
@@ -23,6 +25,8 @@ import {
   postApiAdminUsersByIdUnsuspend,
 } from "../sdk.gen"
 import type {
+  GetApiAdminInviteCodeData,
+  GetApiAdminInviteCodeResponse,
   GetApiAdminOnboardingData,
   GetApiAdminOnboardingResponse,
   GetApiAdminPostsData,
@@ -31,6 +35,8 @@ import type {
   GetApiAdminStatsResponse,
   GetApiAdminUsersData,
   GetApiAdminUsersResponse,
+  PostApiAdminInviteCodeData,
+  PostApiAdminInviteCodeResponse,
   PostApiAdminOnboardingByIdApproveData,
   PostApiAdminOnboardingByIdApproveError,
   PostApiAdminOnboardingByIdApproveResponse,
@@ -515,6 +521,58 @@ export const postApiAdminOnboardingByIdRejectMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await postApiAdminOnboardingByIdReject({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getApiAdminInviteCodeQueryKey = (options?: Options<GetApiAdminInviteCodeData>) =>
+  createQueryKey("getApiAdminInviteCode", options)
+
+/**
+ * List superuser bypass invite codes
+ */
+export const getApiAdminInviteCodeOptions = (options?: Options<GetApiAdminInviteCodeData>) =>
+  queryOptions<
+    GetApiAdminInviteCodeResponse,
+    DefaultError,
+    GetApiAdminInviteCodeResponse,
+    ReturnType<typeof getApiAdminInviteCodeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiAdminInviteCode({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiAdminInviteCodeQueryKey(options),
+  })
+
+/**
+ * Create a single-use superuser bypass invite code: redeeming it skips the four-link application and auto-verifies the user
+ */
+export const postApiAdminInviteCodeMutation = (
+  options?: Partial<Options<PostApiAdminInviteCodeData>>,
+): UseMutationOptions<
+  PostApiAdminInviteCodeResponse,
+  DefaultError,
+  Options<PostApiAdminInviteCodeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiAdminInviteCodeResponse,
+    DefaultError,
+    Options<PostApiAdminInviteCodeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiAdminInviteCode({
         ...options,
         ...fnOptions,
         throwOnError: true,

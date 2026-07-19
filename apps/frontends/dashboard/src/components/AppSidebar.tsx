@@ -440,15 +440,15 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
               {isVerified ? (
-                <SidebarMenuItem>
+                <SidebarMenuItem className="md:hidden">
                   <SidebarMenuButton
                     render={<Link to="/referrals" />}
-                    tooltip="Referrals"
+                    tooltip="Invite"
                     isActive={pathname === "/referrals"}
                     className={MENU_ROW_CLASS}
                   >
                     <UserPlus />
-                    <span>Referrals</span>
+                    <span>Invite</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ) : null}
