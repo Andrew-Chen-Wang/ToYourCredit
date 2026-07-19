@@ -17,7 +17,8 @@ garage() {
 
 NODE_ID="$(garage node id -q | cut -d@ -f1)"
 
-if garage layout show | grep -q "$NODE_ID"; then
+# `garage layout show` prints node ids truncated to 16 chars.
+if garage layout show | grep -q "${NODE_ID:0:16}"; then
   echo "Layout already assigned"
 else
   garage layout assign -z dc1 -c 10G "$NODE_ID"
@@ -38,4 +39,8 @@ fi
 
 garage bucket allow --read --write --owner "$BUCKET" --key "$ACCESS_KEY"
 garage bucket website --allow "$BUCKET"
+
+# Browser uploads (presigned PUTs) need bucket CORS rules or the preflight 403s.
+node "$ROOT_DIR/lib/typescript/utils/aws/garage-cors.mjs"
+
 echo "Garage ready: bucket=$BUCKET key=$ACCESS_KEY"
