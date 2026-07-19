@@ -44,14 +44,23 @@ jobs:
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             .
-      - name: Deploy over SSH
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24.14.0"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Migrate and deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.OVH_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan 40.160.59.152 >> ~/.ssh/known_hosts
-          # Log the server into GHCR with this run's token so it can pull the
-          # private image without a long-lived PAT on the host.
-          echo "${{ secrets.GITHUB_TOKEN }}" | \
-            ssh ubuntu@40.160.59.152 "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
-          ssh ubuntu@40.160.59.152 "cd /opt/toyourcredit && ./deploy-api.sh ${{ github.sha }}"
+          bin/deploy/deploy.sh api ${{ github.sha }}
