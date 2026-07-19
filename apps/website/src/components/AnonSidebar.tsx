@@ -14,54 +14,64 @@ const RESOURCE_LINKS = [
   { href: "/legal", label: "Privacy Policy" },
 ]
 
+/** Shared nav content: rendered in the desktop aside and the mobile drawer. */
+export function AnonNavContent() {
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <nav>
+        <ul className="flex flex-col gap-0.5">
+          {MAIN_LINKS.map(({ href, label, icon: Icon }) => (
+            <li key={label}>
+              <Link
+                href={href}
+                className="flex h-10 items-center gap-2 rounded-md px-2 text-sm hover:bg-accent"
+              >
+                <Icon className="size-4" />
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Log in
+        </Link>{" "}
+        to join communities and create your own.
+      </div>
+
+      <div>
+        <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Resources
+        </p>
+        <ul className="flex flex-col gap-0.5">
+          {RESOURCE_LINKS.map(({ href, label }) => (
+            <li key={label}>
+              <Link
+                href={href}
+                className="flex h-10 items-center rounded-md px-2 text-sm hover:bg-accent"
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Static left sidebar for anonymous SSR pages. Mirrors the authenticated
  * dashboard sidebar's top-level navigation without any interactive state.
+ * Hidden below `md`, where AnonMobileNav's drawer takes over.
  */
 export function AnonSidebar() {
   return (
     <aside className="hidden w-64 shrink-0 border-r md:block">
-      <div className="sticky top-14 flex max-h-[calc(100svh-3.5rem)] flex-col gap-4 overflow-y-auto p-4">
-        <nav>
-          <ul className="flex flex-col gap-0.5">
-            {MAIN_LINKS.map(({ href, label, icon: Icon }) => (
-              <li key={label}>
-                <Link
-                  href={href}
-                  className="flex h-10 items-center gap-2 rounded-md px-2 text-sm hover:bg-accent"
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Log in
-          </Link>{" "}
-          to join communities and create your own.
-        </div>
-
-        <div>
-          <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Resources
-          </p>
-          <ul className="flex flex-col gap-0.5">
-            {RESOURCE_LINKS.map(({ href, label }) => (
-              <li key={label}>
-                <Link
-                  href={href}
-                  className="flex h-10 items-center rounded-md px-2 text-sm hover:bg-accent"
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="sticky top-14 max-h-[calc(100svh-3.5rem)] overflow-y-auto">
+        <AnonNavContent />
       </div>
     </aside>
   )

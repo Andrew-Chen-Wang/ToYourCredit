@@ -137,7 +137,7 @@ export function TopNav() {
             onClick={toggleSidebar}
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
-              "rounded-full text-foreground",
+              "rounded-full text-foreground lg:hidden",
             )}
           >
             <Menu className="size-5" />
@@ -148,7 +148,7 @@ export function TopNav() {
         </div>
 
         {/* Center zone: search, horizontally centered with a max width */}
-        <div className="flex min-w-0 flex-1 justify-center">
+        <div className="hidden min-w-0 flex-1 justify-center sm:flex">
           <SearchSuggest />
         </div>
 
@@ -231,6 +231,11 @@ export function TopNav() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+
+      {/* Small screens: search moves to its own second row instead of being cramped. */}
+      <div className="px-2 pb-2 sm:hidden">
+        <SearchSuggest />
       </div>
       <DisplayModeDialog open={displayOpen} onOpenChange={setDisplayOpen} />
     </header>
