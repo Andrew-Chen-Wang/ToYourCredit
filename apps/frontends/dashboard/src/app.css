@@ -4,3 +4,4 @@
 @import "@ui/base/theme.css";
 
 @plugin 'tailwindcss-animate';
+@plugin '@tailwindcss/typography';

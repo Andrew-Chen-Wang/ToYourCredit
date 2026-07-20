@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@rolldown/plugin-babel": "catalog:",
+    "@tailwindcss/typography": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@types/react": "catalog:",

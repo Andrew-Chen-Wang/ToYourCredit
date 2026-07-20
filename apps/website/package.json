@@ -14,7 +14,6 @@
     "@oslojs/crypto": "catalog:",
     "@oslojs/encoding": "catalog:",
     "@tailwindcss/postcss": "catalog:",
-    "@tailwindcss/typography": "^0.5.20",
     "@tanstack/react-query": "catalog:",
     "@template-nextjs/db": "workspace:*",
     "@template-nextjs/search": "workspace:*",
@@ -34,6 +33,7 @@
     "tailwindcss-animate": "catalog:"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
