@@ -8,19 +8,30 @@
   "author": "",
   "type": "module",
   "main": "index.js",
-  "exports": [
-    {
+  "exports": {
+    ".": {
+      "compiled": "./build/index.js",
       "import": "./src/index.ts",
       "require": "./src/index.ts"
+    },
+    "./*": {
+      "compiled": "./build/*.js",
+      "import": "./src/*.ts",
+      "require": "./src/*.ts"
     }
-  ],
-  "scripts": {},
+  },
+  "scripts": {
+    "build": "tsc --noCheck && tsc-alias -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "bullmq": "catalog:",
     "dotenv": "^17.4.2"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "tsc-alias": "catalog:",
+    "typescript": "catalog:"
   },
   "config": {}
 }

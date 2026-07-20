@@ -8,14 +8,22 @@
   "author": "",
   "type": "module",
   "main": "index.js",
-  "exports": [
-    {
+  "exports": {
+    ".": {
+      "compiled": "./build/index.js",
       "import": "./src/index.ts",
       "require": "./src/index.ts"
+    },
+    "./*": {
+      "compiled": "./build/*.js",
+      "import": "./src/*.ts",
+      "require": "./src/*.ts"
     }
-  ],
+  },
   "scripts": {
-    "db-codegen": "kysely-codegen --config-file ./.config/.kysely-codegenrc.cjs"
+    "db-codegen": "kysely-codegen --config-file ./.config/.kysely-codegenrc.cjs",
+    "build": "tsc --noCheck && tsc-alias -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -25,7 +33,9 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
-    "kysely-codegen": "^0.20.0"
+    "kysely-codegen": "^0.20.0",
+    "tsc-alias": "catalog:",
+    "typescript": "catalog:"
   },
   "config": {
     "codegenoverrides": {}

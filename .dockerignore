@@ -11,6 +11,10 @@ dist
 **/.turbo
 apps/website
 apps/frontends
+# pnpm install --frozen-lockfile validates every workspace importer's manifest,
+# so keep the excluded apps' package.json files in the build context.
+!apps/website/package.json
+!apps/frontends/*/package.json
 tofu
 .env*
 letsencrypt

@@ -8,7 +8,6 @@
     "noEmit": false,
     "esModuleInterop": true,
     "module": "ESNext",
-    "composite": true,
     "declaration": true,
     "target": "ESNext",
     "moduleResolution": "bundler",
@@ -23,5 +22,7 @@
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "build", "**/*.test.ts"],
-  "references": [{ "path": "../../../packages/db" }]
+  "tsc-alias": {
+    "resolveFullPaths": true
+  }
 }

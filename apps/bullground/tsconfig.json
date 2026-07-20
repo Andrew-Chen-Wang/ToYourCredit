@@ -6,7 +6,7 @@
     "skipLibCheck": true,
     "strict": true,
     "noImplicitReturns": true,
-    "noEmit": true,
+    "noEmit": false,
     "esModuleInterop": true,
     "module": "ESNext",
     "target": "ESNext",
@@ -23,5 +23,8 @@
     "outDir": "./build"
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "build", "**/*.test.ts"],
+  "tsc-alias": {
+    "resolveFullPaths": true
+  }
 }

@@ -5,6 +5,9 @@ ENV NPM_CONFIG_FUND=false TURBO_TELEMETRY_DISABLED=1
 WORKDIR /repo
 RUN corepack enable
 COPY . .
+# CI typechecks (pnpm run typecheck); here we only transpile (tsc --noCheck).
+RUN pnpm install --frozen-lockfile --filter=bullground...
+RUN pnpm --filter=bullground... run build
 RUN pnpm --filter=bullground --prod deploy --legacy /app
 
 FROM node:24.14.0-bookworm-slim
@@ -15,4 +18,6 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=deploy /app /app
-CMD ["node_modules/.bin/tsx", "src/index.ts"]
+# --conditions=compiled resolves workspace packages to their build/ output.
+# 4 GiB heap: the container limit is 6 GiB, shared with ffmpeg child processes.
+CMD ["node", "--conditions=compiled", "--max-old-space-size=4096", "build/index.js"]

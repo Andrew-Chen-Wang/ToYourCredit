@@ -10,18 +10,27 @@
   "main": "index.js",
   "exports": {
     ".": {
+      "compiled": "./build/index.js",
       "import": "./src/index.ts",
       "require": "./src/index.ts"
     },
     "./*": {
+      "compiled": "./build/*.js",
       "import": "./src/*.ts",
       "require": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "build": "tsc --noCheck && tsc-alias -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@template-nextjs/db": "workspace:*",
     "kysely": "catalog:",
     "uuid": "catalog:"
+  },
+  "devDependencies": {
+    "tsc-alias": "catalog:",
+    "typescript": "catalog:"
   }
 }

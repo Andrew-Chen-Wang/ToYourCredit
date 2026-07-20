@@ -16,20 +16,15 @@
     "incremental": true,
     "allowImportingTsExtensions": false,
     "paths": {
-      "@api/internal/*": ["./src/*"],
-      "@template-nextjs/db/*": ["../../packages/db/src/*"],
-      "@lib/dao/*": ["../../lib/typescript/dao/src/*"]
+      "@api/internal/*": ["./src/*"]
     },
     "rootDir": "./src",
     "outDir": "./build",
-    "composite": true,
     "declaration": true
   },
   "include": ["**/*.ts", "**/*.json"],
   "exclude": ["node_modules", "build", "**/*.test.ts"],
-  "references": [
-    { "path": "../../packages/db" },
-    { "path": "../../lib/typescript/dao" },
-    { "path": "../../packages/search" }
-  ]
+  "tsc-alias": {
+    "resolveFullPaths": true
+  }
 }
