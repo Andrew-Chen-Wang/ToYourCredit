@@ -94,6 +94,24 @@ export function crudComment(db: Kysely<DB>) {
       if (!comment) return { error: "NOT_FOUND" }
       if (comment.authorUserId !== authorUserId) return { error: "FORBIDDEN" }
 
+      // Remove the credit this comment earned (self-votes excluded). Applies to
+      // both branches: the scrub nulls authorUserId, so vote rows that survive
+      // it can no longer be attributed back to the author.
+      const karma = await trx
+        .selectFrom("commentVote")
+        .select((eb) => eb.fn.sum<string>("value").as("total"))
+        .where("commentId", "=", commentId)
+        .where("userId", "!=", authorUserId)
+        .executeTakeFirst()
+      const earned = Number(karma?.total ?? 0)
+      if (earned !== 0) {
+        await trx
+          .updateTable("user")
+          .set((eb) => ({ commentKarma: eb("commentKarma", "-", earned) }))
+          .where("id", "=", authorUserId)
+          .execute()
+      }
+
       if (comment.childCount > 0) {
         await trx
           .updateTable("comment")

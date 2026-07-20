@@ -1,6 +1,7 @@
 import { db } from "@template-nextjs/db"
 import { v7 } from "uuid"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { crudPost } from "../post/crud"
 import { crudPostVote } from "./crud"
 import { fetchPostVote } from "./fetch"
 
@@ -12,6 +13,8 @@ const voterId = v7()
 const secondVoterId = v7()
 const communityId = v7()
 const postId = v7()
+const selfPostId = v7()
+const byIdPostId = v7()
 
 async function authorKarma(): Promise<number> {
   const row = await db
@@ -69,20 +72,22 @@ beforeAll(async () => {
 
   await db
     .insertInto("post")
-    .values({
-      id: postId,
-      authorUserId: authorId,
-      communityId,
-      type: "text",
-      title: "vote test post",
-      ups: 0,
-      downs: 0,
-    })
+    .values(
+      [postId, selfPostId, byIdPostId].map((id) => ({
+        id,
+        authorUserId: authorId,
+        communityId,
+        type: "text" as const,
+        title: "vote test post",
+        ups: 0,
+        downs: 0,
+      })),
+    )
     .execute()
 })
 
 afterAll(async () => {
-  await db.deleteFrom("post").where("id", "=", postId).execute()
+  await db.deleteFrom("post").where("id", "in", [postId, selfPostId, byIdPostId]).execute()
   await db.deleteFrom("community").where("id", "=", communityId).execute()
   await db.deleteFrom("user").where("id", "in", [authorId, voterId, secondVoterId]).execute()
   await db.destroy()
@@ -229,5 +234,60 @@ describe.skipIf(process.env.CI === "true")("crudPostVote.setVote transitions", (
 
     const other = await fetchPostVote(db).listDownvoters(postId, 10, "trolling")
     expect(other.voters).toEqual([])
+  })
+})
+
+describe.skipIf(process.env.CI === "true")("self-votes and delete credit", () => {
+  it("author self-vote moves score but not credit", async () => {
+    const baseline = await authorKarma()
+
+    const up = await crudPostVote(db).setVote(selfPostId, authorId, {
+      type: "credit",
+      active: true,
+    })
+    expect(up?.ups).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+
+    const down = await crudPostVote(db).setVote(selfPostId, authorId, {
+      type: "down",
+      categories: ["trolling"],
+    })
+    expect(down?.downs).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+
+    const backUp = await crudPostVote(db).setVote(selfPostId, authorId, {
+      type: "credit",
+      active: true,
+    })
+    expect(backUp?.userVote).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+  })
+
+  it("deleteOwn removes credit earned from others, ignoring the self-vote", async () => {
+    const baseline = await authorKarma()
+    await crudPostVote(db).setVote(selfPostId, voterId, { type: "credit", active: true })
+    expect(await authorKarma()).toBe(baseline + 1)
+
+    expect(await crudPost(db).deleteOwn(selfPostId, authorId)).toBe(true)
+    expect(await authorKarma()).toBe(baseline)
+
+    const gone = await db
+      .selectFrom("post")
+      .select("id")
+      .where("id", "=", selfPostId)
+      .executeTakeFirst()
+    expect(gone).toBeUndefined()
+  })
+
+  it("deleteById removes credit earned from others", async () => {
+    const baseline = await authorKarma()
+    await crudPostVote(db).setVote(byIdPostId, voterId, {
+      type: "down",
+      categories: ["spam"],
+    })
+    expect(await authorKarma()).toBe(baseline - 1)
+
+    expect(await crudPost(db).deleteById(byIdPostId)).toBe(true)
+    expect(await authorKarma()).toBe(baseline)
   })
 })

@@ -121,7 +121,9 @@ export function crudCommentVote(db: Kysely<DB>) {
         .returning(["ups", "downs"])
         .executeTakeFirstOrThrow()
 
-      if (scoreDelta !== 0 && comment.authorUserId) {
+      // Self-votes (including the auto-upvote on create) affect the comment's
+      // score but never the author's credit.
+      if (scoreDelta !== 0 && comment.authorUserId && comment.authorUserId !== userId) {
         await trx
           .updateTable("user")
           .set((eb) => ({ commentKarma: eb("commentKarma", "+", scoreDelta) }))

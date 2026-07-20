@@ -1,6 +1,7 @@
 import { db } from "@template-nextjs/db"
 import { v7 } from "uuid"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { crudComment } from "../comment/crud"
 import { crudCommentVote } from "./crud"
 import { fetchCommentVote } from "./fetch"
 
@@ -12,6 +13,9 @@ const voterId = v7()
 const communityId = v7()
 const postId = v7()
 const commentId = v7()
+const selfCommentId = v7()
+const scrubCommentId = v7()
+const scrubChildId = v7()
 
 async function authorKarma(): Promise<number> {
   const row = await db
@@ -64,19 +68,60 @@ beforeAll(async () => {
 
   await db
     .insertInto("post")
-    .values({ id: postId, authorUserId: authorId, communityId, type: "text", title: "cv post" })
+    .values({
+      id: postId,
+      authorUserId: authorId,
+      communityId,
+      type: "text",
+      title: "cv post",
+      commentCount: 4,
+    })
+    .execute()
+
+  await db
+    .insertInto("comment")
+    .values([
+      {
+        id: commentId,
+        postId,
+        parentCommentId: null,
+        path: [commentId],
+        depth: 0,
+        authorUserId: authorId,
+        bodyMd: "vote target",
+      },
+      {
+        id: selfCommentId,
+        postId,
+        parentCommentId: null,
+        path: [selfCommentId],
+        depth: 0,
+        authorUserId: authorId,
+        bodyMd: "self vote target",
+      },
+      {
+        id: scrubCommentId,
+        postId,
+        parentCommentId: null,
+        path: [scrubCommentId],
+        depth: 0,
+        authorUserId: authorId,
+        bodyMd: "scrub target",
+        childCount: 1,
+      },
+    ])
     .execute()
 
   await db
     .insertInto("comment")
     .values({
-      id: commentId,
+      id: scrubChildId,
       postId,
-      parentCommentId: null,
-      path: [commentId],
-      depth: 0,
-      authorUserId: authorId,
-      bodyMd: "vote target",
+      parentCommentId: scrubCommentId,
+      path: [scrubCommentId, scrubChildId],
+      depth: 1,
+      authorUserId: voterId,
+      bodyMd: "scrub child",
     })
     .execute()
 })
@@ -151,5 +196,64 @@ describe.skipIf(process.env.CI === "true")("crudCommentVote.setVote transitions"
       .executeTakeFirst()
     expect(vote).toBeUndefined()
     expect(await reasonRows()).toEqual([])
+  })
+})
+
+describe.skipIf(process.env.CI === "true")("self-votes and delete credit", () => {
+  it("author self-vote moves score but not credit", async () => {
+    const baseline = await authorKarma()
+
+    const up = await crudCommentVote(db).setVote(selfCommentId, authorId, {
+      type: "credit",
+      active: true,
+    })
+    expect(up?.ups).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+
+    const down = await crudCommentVote(db).setVote(selfCommentId, authorId, {
+      type: "down",
+      categories: ["trolling"],
+    })
+    expect(down?.downs).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+
+    const backUp = await crudCommentVote(db).setVote(selfCommentId, authorId, {
+      type: "credit",
+      active: true,
+    })
+    expect(backUp?.userVote).toBe(1)
+    expect(await authorKarma()).toBe(baseline)
+  })
+
+  it("hard deleteOwn removes credit earned from others, ignoring the self-vote", async () => {
+    const baseline = await authorKarma()
+    await crudCommentVote(db).setVote(selfCommentId, voterId, { type: "credit", active: true })
+    expect(await authorKarma()).toBe(baseline + 1)
+
+    expect(await crudComment(db).deleteOwn(selfCommentId, authorId)).toEqual({ mode: "hard" })
+    expect(await authorKarma()).toBe(baseline)
+
+    const gone = await db
+      .selectFrom("comment")
+      .select("id")
+      .where("id", "=", selfCommentId)
+      .executeTakeFirst()
+    expect(gone).toBeUndefined()
+  })
+
+  it("scrub deleteOwn removes credit; later votes on the scrubbed comment stay unattributed", async () => {
+    const baseline = await authorKarma()
+    await crudCommentVote(db).setVote(scrubCommentId, voterId, { type: "credit", active: true })
+    expect(await authorKarma()).toBe(baseline + 1)
+
+    expect(await crudComment(db).deleteOwn(scrubCommentId, authorId)).toEqual({ mode: "scrub" })
+    expect(await authorKarma()).toBe(baseline)
+
+    const changed = await crudCommentVote(db).setVote(scrubCommentId, voterId, {
+      type: "down",
+      categories: ["spam"],
+    })
+    expect(changed?.userVote).toBe(-1)
+    expect(await authorKarma()).toBe(baseline)
   })
 })

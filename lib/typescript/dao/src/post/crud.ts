@@ -121,17 +121,58 @@ export function crudPost(db: Kysely<DB>) {
   }
 
   async function deleteOwn(id: string, authorUserId: string): Promise<boolean> {
-    const result = await db
-      .deleteFrom("post")
-      .where("id", "=", id)
-      .where("authorUserId", "=", authorUserId)
-      .executeTakeFirst()
-    return (result.numDeletedRows ?? 0n) > 0n
+    return await db.transaction().execute(async (trx) => {
+      // Credit earned by the post (self-votes excluded); summed before the
+      // delete because post_vote rows cascade away with it.
+      const karma = await trx
+        .selectFrom("postVote")
+        .select((eb) => eb.fn.sum<string>("value").as("total"))
+        .where("postId", "=", id)
+        .where("userId", "!=", authorUserId)
+        .executeTakeFirst()
+      const result = await trx
+        .deleteFrom("post")
+        .where("id", "=", id)
+        .where("authorUserId", "=", authorUserId)
+        .executeTakeFirst()
+      const deleted = (result.numDeletedRows ?? 0n) > 0n
+      const earned = Number(karma?.total ?? 0)
+      if (deleted && earned !== 0) {
+        await trx
+          .updateTable("user")
+          .set((eb) => ({ postKarma: eb("postKarma", "-", earned) }))
+          .where("id", "=", authorUserId)
+          .execute()
+      }
+      return deleted
+    })
   }
 
   async function deleteById(id: string): Promise<boolean> {
-    const result = await db.deleteFrom("post").where("id", "=", id).executeTakeFirst()
-    return (result.numDeletedRows ?? 0n) > 0n
+    return await db.transaction().execute(async (trx) => {
+      const post = await trx
+        .selectFrom("post")
+        .select(["authorUserId"])
+        .where("id", "=", id)
+        .executeTakeFirst()
+      if (!post) return false
+      const karma = await trx
+        .selectFrom("postVote")
+        .select((eb) => eb.fn.sum<string>("value").as("total"))
+        .where("postId", "=", id)
+        .where("userId", "!=", post.authorUserId)
+        .executeTakeFirst()
+      await trx.deleteFrom("post").where("id", "=", id).execute()
+      const earned = Number(karma?.total ?? 0)
+      if (earned !== 0) {
+        await trx
+          .updateTable("user")
+          .set((eb) => ({ postKarma: eb("postKarma", "-", earned) }))
+          .where("id", "=", post.authorUserId)
+          .execute()
+      }
+      return true
+    })
   }
 
   async function setFlair(
