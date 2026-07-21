@@ -30,7 +30,7 @@ services:
       - xpack.security.enabled=false
       - xpack.security.enrollment.enabled=false
       - bootstrap.memory_lock=true
-      - ES_JAVA_OPTS=-Xms16g -Xmx16g
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
       - ELASTIC_PASSWORD=wgUi6pBdBJq03hpDw2ulNuW
     ulimits:
       memlock:

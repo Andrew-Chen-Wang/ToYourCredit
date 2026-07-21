@@ -169,9 +169,13 @@ services:
       - xpack.security.enabled=true
       - xpack.security.enrollment.enabled=false
       - bootstrap.memory_lock=true
-      - ES_JAVA_OPTS=-Xms12g -Xmx12g
+      # We have low traffic, so a small heap is plenty. Keep mem_limit at
+      # ~2x heap: the JVM needs off-heap room (direct memory defaults to
+      # half the heap, plus metaspace/thread stacks) and Lucene relies on
+      # OS page cache within the cgroup limit.
+      - ES_JAVA_OPTS=-Xms4g -Xmx4g
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-    mem_limit: 16g
+    mem_limit: 8g
     ulimits:
       memlock:
         soft: -1
