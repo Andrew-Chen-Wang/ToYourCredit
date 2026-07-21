@@ -3,6 +3,7 @@ import { loadProfileOverview } from "@website/lib/feed-ssr"
 import { getCurrentSession } from "@website/lib/auth"
 import { ProfileHeader } from "@ui/seo-shared/profile/ProfileHeader"
 import { fetchUser } from "@lib/dao/user/fetch"
+import { fetchUserStrike } from "@lib/dao/userStrike/fetch"
 import { db } from "@template-nextjs/db"
 import { mediaUrl } from "@website/lib/mediaUrl"
 import type { Metadata } from "next"
@@ -47,7 +48,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   }
 
   const session = await getCurrentSession()
-  const overview = await loadProfileOverview(user.id, session?.user.id ?? null)
+  const [overview, strikeCount] = await Promise.all([
+    loadProfileOverview(user.id, session?.user.id ?? null),
+    fetchUserStrike(db).countActive(user.id),
+  ])
 
   // Map the merged DAO items into presentational shapes, computing permalinks.
   const items: AnonOverviewItem[] = overview.map((item) =>
@@ -90,7 +94,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           postKarma: user.postKarma,
           commentKarma: user.commentKarma,
           createdAt: user.createdAt,
+          strikeCount,
         }}
+        strikesHref={`/user/${user.username}/strikes`}
       >
         {items.length === 0 ? (
           <div className="rounded-lg border bg-card p-10 text-center">

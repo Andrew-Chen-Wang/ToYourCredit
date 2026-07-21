@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@ui/base/ui/avatar"
 import { Card, CardContent } from "@ui/base/ui/card"
-import { CakeIcon } from "lucide-react"
+import { CakeIcon, ShieldAlert } from "lucide-react"
 import type { ReactNode } from "react"
 import { formatCompactNumber } from "@ui/seo-shared/format-number"
 
@@ -13,11 +13,17 @@ export type ProfileHeaderUser = {
   postKarma: number
   commentKarma: number
   createdAt: string | Date
+  /** Active strikes in the past 365 days; omit to hide the stat. */
+  strikeCount?: number
 }
 
 export type ProfileHeaderProps = {
   user: ProfileHeaderUser
   action?: ReactNode
+  /** Link target for the strikes stat (SSR pages). */
+  strikesHref?: string
+  /** Click handler for the strikes stat (SPA tab switch). Ignored when strikesHref is set. */
+  onStrikesClick?: () => void
   /** Extra right-sidebar cards rendered below the Credit card (moderating, social, settings). */
   sidebarExtra?: ReactNode
   /** Main-column content (tabs + feed) rendered beside the profile info card. */
@@ -32,7 +38,14 @@ function formatCakeDay(value: string | Date): string {
   })
 }
 
-export function ProfileHeader({ user, action, sidebarExtra, children }: ProfileHeaderProps) {
+export function ProfileHeader({
+  user,
+  action,
+  strikesHref,
+  onStrikesClick,
+  sidebarExtra,
+  children,
+}: ProfileHeaderProps) {
   const name = user.displayName ?? user.username
   const initial = name.charAt(0).toUpperCase()
   const totalKarma = user.postKarma + user.commentKarma
@@ -94,6 +107,9 @@ export function ProfileHeader({ user, action, sidebarExtra, children }: ProfileH
                   {formatCakeDay(user.createdAt)}
                 </span>
               </div>
+              {typeof user.strikeCount === "number" ? (
+                <StrikesStat count={user.strikeCount} href={strikesHref} onClick={onStrikesClick} />
+              ) : null}
             </CardContent>
           </Card>
           {sidebarExtra}
@@ -103,4 +119,41 @@ export function ProfileHeader({ user, action, sidebarExtra, children }: ProfileH
       </div>
     </div>
   )
+}
+
+function StrikesStat({
+  count,
+  href,
+  onClick,
+}: {
+  count: number
+  href?: string
+  onClick?: () => void
+}) {
+  const body = (
+    <>
+      <ShieldAlert className={`size-4${count > 0 ? " text-destructive" : ""}`} />
+      <span>Strikes (past year)</span>
+      <span className={`ml-auto font-medium ${count > 0 ? "text-destructive" : "text-foreground"}`}>
+        {count}
+      </span>
+    </>
+  )
+  const className =
+    "flex w-full items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+  if (href) {
+    return (
+      <a href={href} className={className}>
+        {body}
+      </a>
+    )
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {body}
+      </button>
+    )
+  }
+  return <div className={className.replace(" hover:text-foreground", "")}>{body}</div>
 }

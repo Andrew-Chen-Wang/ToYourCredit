@@ -12,6 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@ui/base/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@ui/base/ui/avatar"
+import { Badge } from "@ui/base/ui/badge"
 import { Button, buttonVariants } from "@ui/base/ui/button"
 import { cn } from "@ui/base/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/base/ui/card"
@@ -32,6 +33,7 @@ import {
   getApiV1NotificationPreferencesOptions,
   getApiV1UserMeOptions,
   getApiV1UserMeSettingsOptions,
+  getApiV1UserMeStrikesOptions,
   patchApiV1UserMeMutation,
   patchApiV1UserMeSettingsMutation,
   putApiV1NotificationPreferencesMutation,
@@ -268,6 +270,8 @@ function AccountTab() {
         </CardContent>
       </Card>
 
+      <AccountStandingCard />
+
       <AccountEngagementCards />
 
       <Card className="border-destructive/40">
@@ -307,6 +311,49 @@ function AccountTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function AccountStandingCard() {
+  const { data } = useQuery(getApiV1UserMeStrikesOptions())
+
+  return (
+    <Card className={data && data.activeCount > 0 ? "border-destructive/40" : undefined}>
+      <CardHeader>
+        <CardTitle>Account standing</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {!data || data.data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Your account is in good standing.</p>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {data.activeCount} active strike{data.activeCount === 1 ? "" : "s"}. Strikes stop
+              counting toward suspension 365 days after they are issued; 5 active strikes result in
+              suspension. Strikes are visible on your public profile.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {data.data.map((strike) => (
+                <li
+                  key={strike.id}
+                  className={`rounded-md border p-3 ${strike.active ? "" : "opacity-60"}`}
+                >
+                  <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    {strike.active ? (
+                      <Badge variant="destructive">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">Expired</Badge>
+                    )}
+                    <span>{new Date(strike.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm">{strike.reason}</p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

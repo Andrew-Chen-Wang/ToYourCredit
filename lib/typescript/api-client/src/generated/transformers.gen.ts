@@ -47,11 +47,13 @@ import type {
   GetApiV1UserByUsernameByUsernameCommentsResponse,
   GetApiV1UserByUsernameByUsernameOverviewResponse,
   GetApiV1UserByUsernameByUsernameResponse,
+  GetApiV1UserByUsernameByUsernameStrikesResponse,
   GetApiV1UserFollowMineResponse,
   GetApiV1UserMeDownvotedResponse,
   GetApiV1UserMeHiddenResponse,
   GetApiV1UserMeResponse,
   GetApiV1UserMeSavedResponse,
+  GetApiV1UserMeStrikesResponse,
   GetApiV1UserMeUpvotedResponse,
   GetApiV1WikiByCommunityNameBySlugResponse,
   GetApiV1WikiByCommunityNameBySlugRevisionsResponse,
@@ -126,6 +128,16 @@ export const getApiV1UserByUsernameByUsernameResponseTransformer = async (
   return data
 }
 
+export const getApiV1UserByUsernameByUsernameStrikesResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1UserByUsernameByUsernameStrikesResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.createdAt = new Date(item.createdAt)
+    return item
+  })
+  return data
+}
+
 export const getApiV1UserByUsernameByUsernameCommentsResponseTransformer = async (
   data: any,
 ): Promise<GetApiV1UserByUsernameByUsernameCommentsResponse> => {
@@ -147,6 +159,16 @@ export const getApiV1UserByUsernameByUsernameOverviewResponseTransformer = async
     if (item.post.editedAt) {
       item.post.editedAt = new Date(item.post.editedAt)
     }
+    return item
+  })
+  return data
+}
+
+export const getApiV1UserMeStrikesResponseTransformer = async (
+  data: any,
+): Promise<GetApiV1UserMeStrikesResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.createdAt = new Date(item.createdAt)
     return item
   })
   return data

@@ -66,7 +66,7 @@ export default async function PostDetailPage({
     fetchPost(db).getRawById(postId),
     fetchPost(db).getOne(postId, ["removedAt", "communityId"]),
   ])
-  if (!raw || !meta || meta.removedAt !== null || meta.communityId !== community.id) {
+  if (!raw || !meta || meta.communityId !== community.id) {
     notFound()
   }
 

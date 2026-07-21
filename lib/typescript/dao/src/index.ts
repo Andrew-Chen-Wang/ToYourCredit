@@ -66,6 +66,7 @@ export { crudNotification } from "./notification/crud"
 export { fetchNotification } from "./notification/fetch"
 export type { NotificationCursor } from "./notification/fetch"
 export {
+  emitAccountStrike,
   emitChatRequest,
   emitCommentReplyAndMentions,
   emitCommentUpvoteMilestone,
@@ -147,6 +148,8 @@ export { fetchUserMutedCommunity } from "./userMutedCommunity/fetch"
 export { crudUserNotificationPreference } from "./userNotificationPreference/crud"
 export { fetchUserNotificationPreference } from "./userNotificationPreference/fetch"
 export { crudUserSettings } from "./userSettings/crud"
+export { crudUserStrike } from "./userStrike/crud"
+export { fetchUserStrike, STRIKE_WINDOW_DAYS, strikeWindowStart } from "./userStrike/fetch"
 export { fetchUserSettings } from "./userSettings/fetch"
 export { crudWikiPage } from "./wikiPage/crud"
 export { fetchWikiPage } from "./wikiPage/fetch"

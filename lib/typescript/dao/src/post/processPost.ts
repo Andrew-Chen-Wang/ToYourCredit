@@ -77,6 +77,7 @@ export interface ProcessedPost {
   editedAt: string | null
   userVote: number
   isAuthor: boolean
+  isStriked: boolean
   author: ProcessedPostAuthor | null
   community: (ProcessedPostCommunity & { isMember: boolean }) | null
   flair: ProcessedPostFlair | null
@@ -101,48 +102,57 @@ export async function processPosts(
   const flairIds = unique(rows.map((r) => r.flairTemplateId))
   const mediaPostIds = rows.filter((r) => r.type === "media").map((r) => r.id)
 
-  const [voteRows, authorRows, communityRows, flairRows, mediaRows] = await Promise.all([
-    viewerId
-      ? db
-          .selectFrom("postVote")
-          .select(["postId", "value"])
-          .where("userId", "=", viewerId)
-          .where("postId", "in", postIds)
-          .execute()
-      : Promise.resolve([] as { postId: string; value: number }[]),
-    authorIds.length
-      ? db
-          .selectFrom("user")
-          .select(["id", "username", "displayName", "avatarImageKey", "isAdmin"])
-          .where("id", "in", authorIds)
-          .execute()
-      : Promise.resolve([] as ProcessedPostAuthor[]),
-    communityIds.length
-      ? db
-          .selectFrom("community")
-          .select(["id", "name", "displayName", "iconImageKey", "isNsfw"])
-          .where("id", "in", communityIds)
-          .execute()
-      : Promise.resolve([] as ProcessedPostCommunity[]),
-    flairIds.length
-      ? db
-          .selectFrom("postFlairTemplate")
-          .select(["id", "text", "bgColor", "textColor"])
-          .where("id", "in", flairIds)
-          .execute()
-      : Promise.resolve([] as ProcessedPostFlair[]),
-    fetchPostMedia(db).getCompletedByPosts(mediaPostIds, [
-      "postId",
-      "mediaType",
-      "s3Key",
-      "hlsMasterKey",
-      "hlsStatus",
-      "width",
-      "height",
-    ]),
-  ])
+  const [voteRows, authorRows, communityRows, flairRows, mediaRows, strikeRows] = await Promise.all(
+    [
+      viewerId
+        ? db
+            .selectFrom("postVote")
+            .select(["postId", "value"])
+            .where("userId", "=", viewerId)
+            .where("postId", "in", postIds)
+            .execute()
+        : Promise.resolve([] as { postId: string; value: number }[]),
+      authorIds.length
+        ? db
+            .selectFrom("user")
+            .select(["id", "username", "displayName", "avatarImageKey", "isAdmin"])
+            .where("id", "in", authorIds)
+            .execute()
+        : Promise.resolve([] as ProcessedPostAuthor[]),
+      communityIds.length
+        ? db
+            .selectFrom("community")
+            .select(["id", "name", "displayName", "iconImageKey", "isNsfw"])
+            .where("id", "in", communityIds)
+            .execute()
+        : Promise.resolve([] as ProcessedPostCommunity[]),
+      flairIds.length
+        ? db
+            .selectFrom("postFlairTemplate")
+            .select(["id", "text", "bgColor", "textColor"])
+            .where("id", "in", flairIds)
+            .execute()
+        : Promise.resolve([] as ProcessedPostFlair[]),
+      fetchPostMedia(db).getCompletedByPosts(mediaPostIds, [
+        "postId",
+        "mediaType",
+        "s3Key",
+        "hlsMasterKey",
+        "hlsStatus",
+        "width",
+        "height",
+      ]),
+      db
+        .selectFrom("userStrike")
+        .select("postId")
+        .where("postId", "in", postIds)
+        .where("revokedAt", "is", null)
+        .execute(),
+    ],
+  )
 
   const voteByPost = new Map(voteRows.map((v) => [v.postId, v.value]))
+  const strikedPostIds = new Set(strikeRows.map((s) => s.postId))
   const authorById = new Map(authorRows.map((a) => [a.id, a]))
   const membershipMap =
     viewerId && communityIds.length
@@ -197,6 +207,7 @@ export async function processPosts(
       editedAt: r.editedAt ? r.editedAt.toISOString() : null,
       userVote: voteByPost.get(r.id) ?? 0,
       isAuthor,
+      isStriked: strikedPostIds.has(r.id),
       author: author
         ? {
             id: author.id,

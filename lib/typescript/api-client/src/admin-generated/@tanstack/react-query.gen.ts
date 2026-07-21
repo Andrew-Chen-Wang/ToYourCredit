@@ -15,12 +15,15 @@ import {
   getApiAdminPosts,
   getApiAdminStats,
   getApiAdminUsers,
+  getApiAdminUsersByIdStrikes,
   type Options,
   postApiAdminInviteCode,
   postApiAdminOnboardingByIdApprove,
   postApiAdminOnboardingByIdReject,
   postApiAdminPostsByIdRemove,
   postApiAdminPostsByIdRestore,
+  postApiAdminUsersByIdStrike,
+  postApiAdminUsersByIdStrikeByStrikeIdRevoke,
   postApiAdminUsersByIdSuspend,
   postApiAdminUsersByIdUnsuspend,
 } from "../sdk.gen"
@@ -33,6 +36,9 @@ import type {
   GetApiAdminPostsResponse,
   GetApiAdminStatsData,
   GetApiAdminStatsResponse,
+  GetApiAdminUsersByIdStrikesData,
+  GetApiAdminUsersByIdStrikesError,
+  GetApiAdminUsersByIdStrikesResponse,
   GetApiAdminUsersData,
   GetApiAdminUsersResponse,
   PostApiAdminInviteCodeData,
@@ -49,6 +55,12 @@ import type {
   PostApiAdminPostsByIdRestoreData,
   PostApiAdminPostsByIdRestoreError,
   PostApiAdminPostsByIdRestoreResponse,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeData,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeError,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponse,
+  PostApiAdminUsersByIdStrikeData,
+  PostApiAdminUsersByIdStrikeError,
+  PostApiAdminUsersByIdStrikeResponse,
   PostApiAdminUsersByIdSuspendData,
   PostApiAdminUsersByIdSuspendError,
   PostApiAdminUsersByIdSuspendResponse,
@@ -253,6 +265,88 @@ export const postApiAdminUsersByIdUnsuspendMutation = (
   }
   return mutationOptions
 }
+
+/**
+ * Issue a site-wide strike against a user, optionally attached to one of their posts or comments. The 5th active strike within 365 days auto-suspends the account.
+ */
+export const postApiAdminUsersByIdStrikeMutation = (
+  options?: Partial<Options<PostApiAdminUsersByIdStrikeData>>,
+): UseMutationOptions<
+  PostApiAdminUsersByIdStrikeResponse,
+  PostApiAdminUsersByIdStrikeError,
+  Options<PostApiAdminUsersByIdStrikeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiAdminUsersByIdStrikeResponse,
+    PostApiAdminUsersByIdStrikeError,
+    Options<PostApiAdminUsersByIdStrikeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiAdminUsersByIdStrike({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Revoke a strike. Does not lift an existing suspension — unsuspend separately if appropriate.
+ */
+export const postApiAdminUsersByIdStrikeByStrikeIdRevokeMutation = (
+  options?: Partial<Options<PostApiAdminUsersByIdStrikeByStrikeIdRevokeData>>,
+): UseMutationOptions<
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponse,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeError,
+  Options<PostApiAdminUsersByIdStrikeByStrikeIdRevokeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponse,
+    PostApiAdminUsersByIdStrikeByStrikeIdRevokeError,
+    Options<PostApiAdminUsersByIdStrikeByStrikeIdRevokeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiAdminUsersByIdStrikeByStrikeIdRevoke({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getApiAdminUsersByIdStrikesQueryKey = (
+  options: Options<GetApiAdminUsersByIdStrikesData>,
+) => createQueryKey("getApiAdminUsersByIdStrikes", options)
+
+/**
+ * List all strikes for a user, including revoked ones
+ */
+export const getApiAdminUsersByIdStrikesOptions = (
+  options: Options<GetApiAdminUsersByIdStrikesData>,
+) =>
+  queryOptions<
+    GetApiAdminUsersByIdStrikesResponse,
+    GetApiAdminUsersByIdStrikesError,
+    GetApiAdminUsersByIdStrikesResponse,
+    ReturnType<typeof getApiAdminUsersByIdStrikesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiAdminUsersByIdStrikes({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiAdminUsersByIdStrikesQueryKey(options),
+  })
 
 export const getApiAdminPostsQueryKey = (options?: Options<GetApiAdminPostsData>) =>
   createQueryKey("getApiAdminPosts", options)

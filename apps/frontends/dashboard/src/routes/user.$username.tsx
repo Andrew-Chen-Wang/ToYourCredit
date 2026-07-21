@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Button, buttonVariants } from "@ui/base/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/base/ui/tabs"
@@ -27,12 +27,16 @@ import {
   getApiV1UserByUsernameByUsernameModeratingOptions,
   getApiV1UserByUsernameByUsernameOptions,
   getApiV1UserByUsernameByUsernameSocialLinksOptions,
+  getApiV1UserByUsernameByUsernameStrikesInfiniteOptions,
   getApiV1UserMeOptions,
 } from "@lib/api-client/generated/@tanstack/react-query.gen"
+import { Badge } from "@ui/base/ui/badge"
+import { LoadingButton } from "@ui/base/ui/loading-button"
 const PROFILE_TABS = [
   "overview",
   "posts",
   "comments",
+  "strikes",
   "saved",
   "history",
   "hidden",
@@ -41,7 +45,7 @@ const PROFILE_TABS = [
 ] as const
 type ProfileTab = (typeof PROFILE_TABS)[number]
 
-const PUBLIC_TABS: ProfileTab[] = ["overview", "posts", "comments"]
+const PUBLIC_TABS: ProfileTab[] = ["overview", "posts", "comments", "strikes"]
 
 type ProfileSearch = { tab?: ProfileTab }
 
@@ -287,6 +291,126 @@ function DownvotedTab() {
   )
 }
 
+function StrikesTab({ username }: { username: string }) {
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery({
+    ...getApiV1UserByUsernameByUsernameStrikesInfiniteOptions({ path: { username } }),
+    initialPageParam: { path: { username } },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  })
+
+  const strikes = data?.pages.flatMap((page) => page.data) ?? []
+  const activeCount = data?.pages[0]?.activeCount ?? 0
+
+  if (isLoading) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">Loading...</p>
+  }
+
+  if (strikes.length === 0) {
+    return (
+      <div className="py-10 text-center">
+        <h2 className="text-base font-semibold">No strikes</h2>
+        <p className="text-sm text-muted-foreground">
+          u/{username} has not received any moderation strikes.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted-foreground">
+        {activeCount} active strike{activeCount === 1 ? "" : "s"} in the past year. Strikes are a
+        public record of content that broke the rules; 5 active strikes result in suspension.
+      </p>
+      <ul className="flex flex-col gap-3">
+        {strikes.map((strike) => (
+          <li key={strike.id} className="rounded-lg border p-4">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {strike.active ? (
+                <Badge variant="destructive">Active</Badge>
+              ) : (
+                <Badge variant="secondary">Expired</Badge>
+              )}
+              <span>{new Date(strike.createdAt).toLocaleDateString()}</span>
+            </div>
+            <p className="text-sm font-medium">{strike.reason}</p>
+            {strike.contentHidden ? (
+              <p className="mt-2 text-sm text-muted-foreground">Content in a private community.</p>
+            ) : strike.post ? (
+              <div className="mt-2 rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {strike.post.communityName ? <span>r/{strike.post.communityName}</span> : null}
+                  {strike.post.removed ? (
+                    <Badge variant="outline">Removed by moderators</Badge>
+                  ) : null}
+                </div>
+                <a
+                  href={
+                    strike.post.communityName
+                      ? `/r/${strike.post.communityName}/comments/${strike.post.id}`
+                      : `/user/${username}/comments/${strike.post.id}`
+                  }
+                  className="mt-1 block text-sm font-semibold hover:underline"
+                >
+                  {strike.post.title ?? "View post"}
+                </a>
+                {strike.post.bodyMd ? (
+                  <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
+                    {strike.post.bodyMd}
+                  </p>
+                ) : null}
+              </div>
+            ) : strike.comment ? (
+              <div className="mt-2 rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {strike.comment.communityName ? (
+                    <span>r/{strike.comment.communityName}</span>
+                  ) : null}
+                  <span>
+                    Comment{strike.comment.postTitle ? ` on "${strike.comment.postTitle}"` : ""}
+                  </span>
+                  {strike.comment.removed ? (
+                    <Badge variant="outline">Removed by moderators</Badge>
+                  ) : null}
+                </div>
+                {strike.comment.bodyMd ? (
+                  <p className="mt-1 line-clamp-4 whitespace-pre-line text-sm">
+                    {strike.comment.bodyMd}
+                  </p>
+                ) : null}
+                {strike.comment.postId ? (
+                  <a
+                    href={
+                      strike.comment.communityName
+                        ? `/r/${strike.comment.communityName}/comments/${strike.comment.postId}?comment=${strike.comment.id}`
+                        : `/user/${username}/comments/${strike.comment.postId}?comment=${strike.comment.id}`
+                    }
+                    className="mt-1 inline-block text-xs font-medium text-muted-foreground hover:underline"
+                  >
+                    View in thread
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {hasNextPage ? (
+        <LoadingButton
+          variant="outline"
+          className="self-center"
+          loading={isFetchingNextPage}
+          onClick={() => {
+            void fetchNextPage()
+          }}
+        >
+          Load more
+        </LoadingButton>
+      ) : null}
+    </div>
+  )
+}
+
 function ProfilePage() {
   const { username } = Route.useParams()
   const { tab } = Route.useSearch()
@@ -337,6 +461,10 @@ function ProfilePage() {
           postKarma: data.postKarma,
           commentKarma: data.commentKarma,
           createdAt: data.createdAt,
+          strikeCount: data.strikeCount,
+        }}
+        onStrikesClick={() => {
+          void navigate({ search: { tab: "strikes" }, replace: true })
         }}
         action={
           isOwnProfile ? (
@@ -371,6 +499,9 @@ function ProfilePage() {
           </TabsContent>
           <TabsContent value="comments">
             <CommentsTab username={data.username} />
+          </TabsContent>
+          <TabsContent value="strikes">
+            <StrikesTab username={data.username} />
           </TabsContent>
           {isOwnProfile ? (
             <>

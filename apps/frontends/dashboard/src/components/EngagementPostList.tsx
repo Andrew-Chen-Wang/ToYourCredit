@@ -201,7 +201,8 @@ export function EngagementPostList({
                 isSpoiler: post.isSpoiler,
                 isOc: post.isOc,
                 isAuthor: post.isAuthor,
-                author: post.author ? { username: post.author.username } : null,
+                isStriked: post.isStriked,
+                author: post.author ? { id: post.author.id, username: post.author.username } : null,
                 community: post.community
                   ? { id: post.community.id, name: post.community.name }
                   : null,

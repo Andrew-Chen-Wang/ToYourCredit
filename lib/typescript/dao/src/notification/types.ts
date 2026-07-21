@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = [
   "chat_request",
   "join_request_approved",
   "welcome",
+  "account_strike",
 ] as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]

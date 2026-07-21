@@ -11,6 +11,9 @@ import type {
   GetApiAdminPostsResponses,
   GetApiAdminStatsData,
   GetApiAdminStatsResponses,
+  GetApiAdminUsersByIdStrikesData,
+  GetApiAdminUsersByIdStrikesErrors,
+  GetApiAdminUsersByIdStrikesResponses,
   GetApiAdminUsersData,
   GetApiAdminUsersResponses,
   PostApiAdminInviteCodeData,
@@ -27,6 +30,12 @@ import type {
   PostApiAdminPostsByIdRestoreData,
   PostApiAdminPostsByIdRestoreErrors,
   PostApiAdminPostsByIdRestoreResponses,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeData,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses,
+  PostApiAdminUsersByIdStrikeData,
+  PostApiAdminUsersByIdStrikeErrors,
+  PostApiAdminUsersByIdStrikeResponses,
   PostApiAdminUsersByIdSuspendData,
   PostApiAdminUsersByIdSuspendErrors,
   PostApiAdminUsersByIdSuspendResponses,
@@ -102,6 +111,61 @@ export const postApiAdminUsersByIdUnsuspend = <ThrowOnError extends boolean = fa
     PostApiAdminUsersByIdUnsuspendErrors,
     ThrowOnError
   >({ url: "/api/admin/users/{id}/unsuspend", ...options })
+
+/**
+ * Issue a site-wide strike against a user, optionally attached to one of their posts or comments. The 5th active strike within 365 days auto-suspends the account.
+ */
+export const postApiAdminUsersByIdStrike = <ThrowOnError extends boolean = false>(
+  options: Options<PostApiAdminUsersByIdStrikeData, ThrowOnError>,
+): RequestResult<
+  PostApiAdminUsersByIdStrikeResponses,
+  PostApiAdminUsersByIdStrikeErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PostApiAdminUsersByIdStrikeResponses,
+    PostApiAdminUsersByIdStrikeErrors,
+    ThrowOnError
+  >({
+    url: "/api/admin/users/{id}/strike",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  })
+
+/**
+ * Revoke a strike. Does not lift an existing suspension — unsuspend separately if appropriate.
+ */
+export const postApiAdminUsersByIdStrikeByStrikeIdRevoke = <ThrowOnError extends boolean = false>(
+  options: Options<PostApiAdminUsersByIdStrikeByStrikeIdRevokeData, ThrowOnError>,
+): RequestResult<
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses,
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses,
+    PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors,
+    ThrowOnError
+  >({ url: "/api/admin/users/{id}/strike/{strikeId}/revoke", ...options })
+
+/**
+ * List all strikes for a user, including revoked ones
+ */
+export const getApiAdminUsersByIdStrikes = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiAdminUsersByIdStrikesData, ThrowOnError>,
+): RequestResult<
+  GetApiAdminUsersByIdStrikesResponses,
+  GetApiAdminUsersByIdStrikesErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiAdminUsersByIdStrikesResponses,
+    GetApiAdminUsersByIdStrikesErrors,
+    ThrowOnError
+  >({ url: "/api/admin/users/{id}/strikes", ...options })
 
 /**
  * Search posts by title (includes removed posts)

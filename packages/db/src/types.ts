@@ -677,6 +677,18 @@ export interface UserSocialLink {
   userId: string
 }
 
+export interface UserStrike {
+  commentId: string | null
+  createdAt: Generated<Timestamp>
+  id: string
+  issuedByUserId: string | null
+  postId: string | null
+  reason: string
+  revokedAt: Timestamp | null
+  revokedByUserId: string | null
+  userId: string
+}
+
 export interface WikiPage {
   communityId: string
   createdAt: Generated<Timestamp>
@@ -755,6 +767,7 @@ export interface DB {
   userNotificationPreference: UserNotificationPreference
   userSettings: UserSettings
   userSocialLink: UserSocialLink
+  userStrike: UserStrike
   wikiPage: WikiPage
   wikiRevision: WikiRevision
 }

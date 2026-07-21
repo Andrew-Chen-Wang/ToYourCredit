@@ -37,6 +37,12 @@ export type CommentNode = {
   userVote: number
   isAuthor: boolean
   /**
+   * True when this comment has a non-revoked site-wide moderation strike:
+   * the author can no longer edit or delete it, and admins see it as already
+   * striked. Optional so SSR callers without the field still fit.
+   */
+  isStriked?: boolean
+  /**
    * Total views for this comment's post-author insights row. The backend sends
    * it to the author only, so the "N views / See More Insights" row renders just
    * when it is present.

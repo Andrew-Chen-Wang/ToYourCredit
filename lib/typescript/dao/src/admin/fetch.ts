@@ -1,5 +1,6 @@
 import type { DB } from "@template-nextjs/db"
 import type { Kysely } from "kysely"
+import { strikeWindowStart } from "../userStrike/fetch"
 
 export interface AdminUserRow {
   id: string
@@ -10,6 +11,7 @@ export interface AdminUserRow {
   createdAt: Date
   suspendedAt: Date | null
   suspensionReason: string | null
+  activeStrikeCount: number
 }
 
 export interface AdminPostRow {
@@ -49,6 +51,15 @@ export function fetchAdmin(db: Kysely<DB>) {
         "suspendedAt",
         "suspensionReason",
       ])
+      .select((eb) =>
+        eb
+          .selectFrom("userStrike")
+          .whereRef("userStrike.userId", "=", "user.id")
+          .where("userStrike.revokedAt", "is", null)
+          .where("userStrike.createdAt", ">", strikeWindowStart())
+          .select((sb) => sb.fn.countAll<string>().as("count"))
+          .as("activeStrikeCount"),
+      )
       .orderBy("id", "desc")
       .limit(limit)
     if (q) {
@@ -58,7 +69,8 @@ export function fetchAdmin(db: Kysely<DB>) {
       )
     }
     if (cursor) query = query.where("id", "<", cursor)
-    return await query.execute()
+    const rows = await query.execute()
+    return rows.map((r) => ({ ...r, activeStrikeCount: Number(r.activeStrikeCount ?? 0) }))
   }
 
   async function searchPosts(

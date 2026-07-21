@@ -38,6 +38,7 @@ export enum ErrorCode {
 
   // Business logic errors
   OperationFailed = "OperationFailed",
+  ContentStriked = "ContentStriked",
 
   // Data errors
   DataIntegrityViolation = "DataIntegrityViolation",

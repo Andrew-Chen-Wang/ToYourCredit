@@ -21,6 +21,7 @@ export const commentWithPostSchema = Type.Object({
   downs: Type.Number(),
   score: Type.Number(),
   isDeleted: Type.Boolean(),
+  isStriked: Type.Boolean(),
   createdAt: Type.String({ format: "date-time" }),
   editedAt: Nullable(Type.String({ format: "date-time" })),
   userVote: Type.Number(),

@@ -8,6 +8,8 @@ import { fetchUser } from "@lib/dao/user/fetch"
 import { crudUserSocialLink } from "@lib/dao/userSocialLink/crud"
 import { fetchUserSocialLink } from "@lib/dao/userSocialLink/fetch"
 import { fetchUserOverview } from "@lib/dao/userOverview/fetch"
+import { fetchUserStrike, strikeWindowStart } from "@lib/dao/userStrike/fetch"
+import { getCommunityAuthz } from "@lib/dao/authz/community/get"
 import { db } from "@template-nextjs/db"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
@@ -22,6 +24,9 @@ import { feedSchemaResponse } from "./feed.serializer"
 import {
   userByUsernameSchemaParam,
   userMeSchemaResponse,
+  userMeStrikesSchemaResponse,
+  userStrikesSchemaQuery,
+  userStrikesSchemaResponse,
   usernameChangeSchemaRequest,
   usernameChangeSchemaResponse,
   userModeratingSchemaResponse,
@@ -107,6 +112,8 @@ const app = new Hono()
 
       if (!profile) return throwNotFound(c, "User not found")
 
+      const strikeCount = await fetchUserStrike(db).countActive(profile.id)
+
       return c.json({
         id: profile.id,
         username: profile.username,
@@ -117,6 +124,94 @@ const app = new Hono()
         postKarma: profile.postKarma,
         commentKarma: profile.commentKarma,
         createdAt: profile.createdAt.toISOString(),
+        strikeCount,
+      })
+    },
+  )
+  .get(
+    "/by-username/:username/strikes",
+    authNoThrowMiddleware,
+    describeRoute({
+      description:
+        "Public record of a user's strikes and the content they were issued for, newest first",
+      responses: {
+        200: {
+          description: "User strikes",
+          content: { "application/json": { schema: resolver(userStrikesSchemaResponse) } },
+        },
+        404: {
+          description: "User not found",
+          content: { "application/json": { schema: resolver(ErrorSchemaResponse) } },
+        },
+      },
+    }),
+    validator("param", userByUsernameSchemaParam),
+    validator("query", userStrikesSchemaQuery),
+    async (c) => {
+      const viewer = c.var.user
+      const { username } = c.req.valid("param")
+      const cursor = c.req.valid("query").cursor ?? null
+
+      const profile = await fetchUser(db).getOneByUsername(username, ["id"])
+      if (!profile) return throwNotFound(c, "User not found")
+
+      const [rows, activeCount] = await Promise.all([
+        fetchUserStrike(db).listForUserPublic(profile.id, cursor, TAB_PAGE_SIZE),
+        fetchUserStrike(db).countActive(profile.id),
+      ])
+      const windowStart = strikeWindowStart()
+
+      const data = await Promise.all(
+        rows.map(async (r) => {
+          const communityId = r.postId ? r.postCommunityId : r.commentCommunityId
+          const communityVisibility = r.postId
+            ? r.postCommunityVisibility
+            : r.commentCommunityVisibility
+          let contentHidden = false
+          if ((r.postId || r.commentId) && communityId && communityVisibility === "private") {
+            const view = await getCommunityAuthz(db).canView(
+              { id: communityId, visibility: communityVisibility },
+              viewer?.id ?? null,
+            )
+            contentHidden = !view.ok
+          }
+          return {
+            id: r.id,
+            reason: r.reason,
+            createdAt: r.createdAt.toISOString(),
+            active: r.createdAt > windowStart,
+            contentHidden,
+            post:
+              r.postId && !contentHidden
+                ? {
+                    id: r.postId,
+                    title: r.postTitle,
+                    bodyMd: r.postBodyMd,
+                    communityId: r.postCommunityId,
+                    communityName: r.postCommunityName,
+                    removed: r.postRemovedAt !== null,
+                  }
+                : null,
+            comment:
+              r.commentId && !contentHidden
+                ? {
+                    id: r.commentId,
+                    bodyMd: r.commentBodyMd,
+                    postId: r.commentPostId,
+                    postTitle: r.commentPostTitle,
+                    communityId: r.commentCommunityId,
+                    communityName: r.commentCommunityName,
+                    removed: r.commentRemovedAt !== null,
+                  }
+                : null,
+          }
+        }),
+      )
+
+      return c.json({
+        data,
+        activeCount,
+        nextCursor: rows.length === TAB_PAGE_SIZE ? rows[rows.length - 1].id : null,
       })
     },
   )
@@ -279,6 +374,36 @@ const app = new Hono()
     },
   )
   .use(authMiddleware)
+  .get(
+    "/me/strikes",
+    describeRoute({
+      description:
+        "The current user's non-revoked strikes. Strikes stop counting toward suspension 365 days after they are issued.",
+      responses: {
+        200: {
+          description: "Current user's strikes",
+          content: { "application/json": { schema: resolver(userMeStrikesSchemaResponse) } },
+        },
+      },
+    }),
+    async (c) => {
+      const user = c.var.user
+      const [rows, activeCount] = await Promise.all([
+        fetchUserStrike(db).listForUser(user.id, ["id", "reason", "createdAt"]),
+        fetchUserStrike(db).countActive(user.id),
+      ])
+      const windowStart = strikeWindowStart()
+      return c.json({
+        data: rows.map((r) => ({
+          id: r.id,
+          reason: r.reason,
+          createdAt: r.createdAt.toISOString(),
+          active: r.createdAt > windowStart,
+        })),
+        activeCount,
+      })
+    },
+  )
   .get(
     "/me/saved",
     describeRoute({

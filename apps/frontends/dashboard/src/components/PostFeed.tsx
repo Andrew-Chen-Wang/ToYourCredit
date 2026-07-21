@@ -115,7 +115,8 @@ export type FeedPost = PostRowPost & {
     iconImageKey: string | null
     isMember?: boolean
   } | null
-  author: { username: string; displayName: string | null; isAdmin?: boolean } | null
+  author: { id?: string; username: string; displayName: string | null; isAdmin?: boolean } | null
+  isStriked?: boolean
   flair: { id: string; text: string; bgColor: string | null; textColor: string | null } | null
 }
 export type FeedPage = { data: FeedPost[]; nextCursor: string | null }
@@ -489,7 +490,10 @@ export function PostFeed({
                     isSpoiler: post.isSpoiler,
                     isOc: post.isOc,
                     isAuthor: post.isAuthor,
-                    author: post.author ? { username: post.author.username } : null,
+                    isStriked: post.isStriked,
+                    author: post.author
+                      ? { id: post.author.id, username: post.author.username }
+                      : null,
                     community: post.community
                       ? { id: post.community.id, name: post.community.name }
                       : null,

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Minus, MoreHorizontal, Pencil, Plus, Reply, Share2, Trash2 } from "lucide-react"
+import { Gavel, Minus, MoreHorizontal, Pencil, Plus, Reply, Share2, Trash2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@ui/base/ui/avatar"
 import { Badge } from "@ui/base/ui/badge"
 import { Button } from "@ui/base/ui/button"
@@ -51,6 +51,8 @@ export type CommentNodeViewProps = {
   onShare?: () => void
   onEdit?: () => void
   onDelete?: () => void
+  /** Admin-only: open the strike dialog for this comment. */
+  onStrike?: () => void
   /** When provided, replaces the body (inline edit composer) and hides the action row. */
   editor?: ReactNode
 }
@@ -90,10 +92,13 @@ export function CommentNodeView({
   onShare,
   onEdit,
   onDelete,
+  onStrike,
   editor,
 }: CommentNodeViewProps) {
   const isRemoved = node.isDeleted || node.bodyMd === null
-  const canEdit = node.isAuthor && !isRemoved && (onEdit ?? onDelete) != null
+  const isStriked = node.isStriked === true
+  const canEdit = node.isAuthor && !isRemoved && !isStriked && (onEdit ?? onDelete) != null
+  const canStrike = onStrike != null && !node.isAuthor && node.author !== null && !node.isDeleted
   const isOp = postAuthorId != null && node.author?.id === postAuthorId
 
   if (collapsed) {
@@ -243,7 +248,7 @@ export function CommentNodeView({
                 Share
               </Button>
             ) : null}
-            {canEdit ? (
+            {canEdit || canStrike ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className="inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
@@ -252,7 +257,7 @@ export function CommentNodeView({
                   <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {onEdit ? (
+                  {canEdit && onEdit ? (
                     <DropdownMenuItem
                       onClick={() => {
                         onEdit()
@@ -262,7 +267,7 @@ export function CommentNodeView({
                       Edit
                     </DropdownMenuItem>
                   ) : null}
-                  {onDelete ? (
+                  {canEdit && onDelete ? (
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => {
@@ -271,6 +276,18 @@ export function CommentNodeView({
                     >
                       <Trash2 className="size-4" />
                       Delete
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canStrike && onStrike ? (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      disabled={isStriked}
+                      onClick={() => {
+                        onStrike()
+                      }}
+                    >
+                      <Gavel className="size-4" />
+                      {isStriked ? "Striked" : "Strike"}
                     </DropdownMenuItem>
                   ) : null}
                 </DropdownMenuContent>

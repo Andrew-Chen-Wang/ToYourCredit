@@ -35,6 +35,7 @@ export type ErrorObjectT = {
     | "ResourceAlreadyExists"
     | "ResourceLocked"
     | "OperationFailed"
+    | "ContentStriked"
     | "DataIntegrityViolation"
     | "RateLimitExceeded"
     | string
@@ -404,11 +405,70 @@ export type GetApiV1UserByUsernameByUsernameResponses = {
     postKarma: number
     commentKarma: number
     createdAt: Date
+    strikeCount: number
   }
 }
 
 export type GetApiV1UserByUsernameByUsernameResponse =
   GetApiV1UserByUsernameByUsernameResponses[keyof GetApiV1UserByUsernameByUsernameResponses]
+
+export type GetApiV1UserByUsernameByUsernameStrikesData = {
+  body?: never
+  path: {
+    username: string
+  }
+  query?: {
+    cursor?: string
+  }
+  url: "/api/v1/user/by-username/{username}/strikes"
+}
+
+export type GetApiV1UserByUsernameByUsernameStrikesErrors = {
+  /**
+   * User not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiV1UserByUsernameByUsernameStrikesError =
+  GetApiV1UserByUsernameByUsernameStrikesErrors[keyof GetApiV1UserByUsernameByUsernameStrikesErrors]
+
+export type GetApiV1UserByUsernameByUsernameStrikesResponses = {
+  /**
+   * User strikes
+   */
+  200: {
+    data: Array<{
+      id: string
+      reason: string
+      createdAt: Date
+      active: boolean
+      contentHidden: boolean
+      post: {
+        id: string
+        title: string | null
+        bodyMd: string | null
+        communityId: string | null
+        communityName: string | null
+        removed: boolean
+      } | null
+      comment: {
+        id: string
+        bodyMd: string | null
+        postId: string | null
+        postTitle: string | null
+        communityId: string | null
+        communityName: string | null
+        removed: boolean
+      } | null
+    }>
+    activeCount: number
+    nextCursor: string | null
+  }
+}
+
+export type GetApiV1UserByUsernameByUsernameStrikesResponse =
+  GetApiV1UserByUsernameByUsernameStrikesResponses[keyof GetApiV1UserByUsernameByUsernameStrikesResponses]
 
 export type GetApiV1UserByUsernameByUsernameCommentsData = {
   body?: never
@@ -446,6 +506,7 @@ export type GetApiV1UserByUsernameByUsernameCommentsResponses = {
       downs: number
       score: number
       isDeleted: boolean
+      isStriked: boolean
       createdAt: Date
       editedAt: Date | null
       userVote: number
@@ -525,6 +586,7 @@ export type GetApiV1UserByUsernameByUsernameOverviewResponses = {
             editedAt: Date | null
             userVote: number
             isAuthor: boolean
+            isStriked: boolean
             removed?: boolean
             removedByMod?: boolean
             removalReasonId?: string | null
@@ -586,6 +648,7 @@ export type GetApiV1UserByUsernameByUsernameOverviewResponses = {
             downs: number
             score: number
             isDeleted: boolean
+            isStriked: boolean
             createdAt: Date
             editedAt: Date | null
             userVote: number
@@ -688,6 +751,31 @@ export type GetApiV1UserByUsernameByUsernameModeratingResponses = {
 export type GetApiV1UserByUsernameByUsernameModeratingResponse =
   GetApiV1UserByUsernameByUsernameModeratingResponses[keyof GetApiV1UserByUsernameByUsernameModeratingResponses]
 
+export type GetApiV1UserMeStrikesData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/api/v1/user/me/strikes"
+}
+
+export type GetApiV1UserMeStrikesResponses = {
+  /**
+   * Current user's strikes
+   */
+  200: {
+    data: Array<{
+      id: string
+      reason: string
+      createdAt: Date
+      active: boolean
+    }>
+    activeCount: number
+  }
+}
+
+export type GetApiV1UserMeStrikesResponse =
+  GetApiV1UserMeStrikesResponses[keyof GetApiV1UserMeStrikesResponses]
+
 export type GetApiV1UserMeSavedData = {
   body?: never
   path?: never
@@ -726,6 +814,7 @@ export type GetApiV1UserMeSavedResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -784,6 +873,7 @@ export type GetApiV1UserMeSavedResponses = {
       downs: number
       score: number
       isDeleted: boolean
+      isStriked: boolean
       createdAt: Date
       editedAt: Date | null
       userVote: number
@@ -848,6 +938,7 @@ export type GetApiV1UserMeHiddenResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -940,6 +1031,7 @@ export type GetApiV1UserMeUpvotedResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -1032,6 +1124,7 @@ export type GetApiV1UserMeDownvotedResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -2567,6 +2660,7 @@ export type GetApiV1CustomFeedByUsernameBySlugPostsResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -3502,6 +3596,7 @@ export type GetApiV1CommentPostByPostIdResponses = {
       isSticky: boolean
       isDeleted: boolean
       removedByMod: boolean
+      isStriked: boolean
       createdAt: Date
       editedAt: Date | null
       userVote: number
@@ -3529,6 +3624,7 @@ export type GetApiV1CommentPostByPostIdResponses = {
       isSticky: boolean
       isDeleted: boolean
       removedByMod: boolean
+      isStriked: boolean
       createdAt: Date
       editedAt: Date | null
       userVote: number
@@ -3910,6 +4006,7 @@ export type GetApiV1PostByIdResponses = {
     editedAt: Date | null
     userVote: number
     isAuthor: boolean
+    isStriked: boolean
     removed?: boolean
     removedByMod?: boolean
     removalReasonId?: string | null
@@ -4344,6 +4441,7 @@ export type GetApiV1FeedCommunityByNameResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -4439,6 +4537,7 @@ export type GetApiV1FeedPopularResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -4533,6 +4632,7 @@ export type GetApiV1FeedHomeResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -4627,6 +4727,7 @@ export type GetApiV1FeedModResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -4733,6 +4834,7 @@ export type GetApiV1FeedProfileByUsernameResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -4873,6 +4975,7 @@ export type GetApiV1HistoryPostsResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -6275,6 +6378,7 @@ export type GetApiV1SearchResponses = {
       editedAt: Date | null
       userVote: number
       isAuthor: boolean
+      isStriked: boolean
       removed?: boolean
       removedByMod?: boolean
       removalReasonId?: string | null
@@ -6339,6 +6443,7 @@ export type GetApiV1SearchResponses = {
         isSticky: boolean
         isDeleted: boolean
         removedByMod: boolean
+        isStriked: boolean
         createdAt: Date
         editedAt: Date | null
         userVote: number
@@ -6531,6 +6636,7 @@ export type GetApiV1ModQueueByCommunityIdResponses = {
         editedAt: Date | null
         userVote: number
         isAuthor: boolean
+        isStriked: boolean
         removed?: boolean
         removedByMod?: boolean
         removalReasonId?: string | null
@@ -6594,6 +6700,7 @@ export type GetApiV1ModQueueByCommunityIdResponses = {
         isSticky: boolean
         isDeleted: boolean
         removedByMod: boolean
+        isStriked: boolean
         createdAt: Date
         editedAt: Date | null
         userVote: number

@@ -61,6 +61,7 @@ export const commentNodeSchema = Type.Object({
   isSticky: Type.Boolean(),
   isDeleted: Type.Boolean(),
   removedByMod: Type.Boolean(),
+  isStriked: Type.Boolean(),
   createdAt: Type.String({ format: "date-time" }),
   editedAt: Nullable(Type.String({ format: "date-time" })),
   userVote: Type.Number(),

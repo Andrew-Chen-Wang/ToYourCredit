@@ -259,7 +259,10 @@ export function OverviewFeed({ username }: { username: string }) {
                     isSpoiler: item.post.isSpoiler,
                     isOc: item.post.isOc,
                     isAuthor: item.post.isAuthor,
-                    author: item.post.author ? { username: item.post.author.username } : null,
+                    isStriked: item.post.isStriked,
+                    author: item.post.author
+                      ? { id: item.post.author.id, username: item.post.author.username }
+                      : null,
                     community: item.post.community
                       ? { id: item.post.community.id, name: item.post.community.name }
                       : null,
