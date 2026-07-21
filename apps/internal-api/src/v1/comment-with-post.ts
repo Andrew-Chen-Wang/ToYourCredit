@@ -32,6 +32,7 @@ export async function buildCommentsWithPost(rows: RawCommentRow[], viewerId: str
       downs: comment.downs,
       score: comment.score,
       isDeleted: comment.isDeleted,
+      isStriked: comment.isStriked,
       createdAt: comment.createdAt,
       editedAt: comment.editedAt,
       userVote: comment.userVote,

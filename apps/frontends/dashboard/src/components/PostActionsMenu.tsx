@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,14 +26,17 @@ import {
   putApiV1PostActionSaveByPostId,
   putApiV1UserBlockByUsername,
 } from "@lib/api-client/generated/sdk.gen"
+import { getApiV1UserMeOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
 import {
   Bell,
   BellOff,
   Bookmark,
   EyeOff,
   Flag,
+  Gavel,
   MoreHorizontal,
   Pencil,
+  ShieldAlert,
   Tags,
   Trash2,
   UserX,
@@ -45,10 +48,12 @@ import {
   type EditPostDialogPost,
 } from "@frontends/dashboard/components/EditPostDialog"
 import { ReportDialog } from "@frontends/dashboard/components/ReportDialog"
+import { StrikeDialog } from "@frontends/dashboard/components/StrikeDialog"
 
 export type PostActionsMenuPost = EditPostDialogPost & {
   isAuthor: boolean
-  author: { username: string } | null
+  author: { id?: string; username: string } | null
+  isStriked?: boolean
 }
 
 export type PostActionsMenuProps = {
@@ -90,6 +95,11 @@ export function PostActionsMenu({
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [strikeOpen, setStrikeOpen] = useState(false)
+  const [striked, setStriked] = useState(post.isStriked ?? false)
+
+  const { data: me } = useQuery(getApiV1UserMeOptions())
+  const viewerIsAdmin = me?.isAdmin === true
 
   const saveMutation = useMutation({
     mutationFn: (next: boolean) =>
@@ -173,34 +183,41 @@ export function PostActionsMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           {post.isAuthor ? (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditOpen(true)
-                }}
-              >
-                <Pencil className="size-4" />
-                Edit post
+            striked ? (
+              <DropdownMenuItem disabled>
+                <ShieldAlert className="size-4" />
+                Striked — cannot edit or delete
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditOpen(true)
-                }}
-              >
-                <Tags className="size-4" />
-                Edit tags
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => {
-                  setDeleteOpen(true)
-                }}
-              >
-                <Trash2 className="size-4" />
-                Delete
-              </DropdownMenuItem>
-            </>
+            ) : (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditOpen(true)
+                  }}
+                >
+                  <Pencil className="size-4" />
+                  Edit post
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditOpen(true)
+                  }}
+                >
+                  <Tags className="size-4" />
+                  Edit tags
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => {
+                    setDeleteOpen(true)
+                  }}
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )
           ) : (
             <>
               <DropdownMenuItem
@@ -252,6 +269,21 @@ export function PostActionsMenu({
                   Block author
                 </DropdownMenuItem>
               ) : null}
+              {viewerIsAdmin && post.author?.id ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={striked}
+                    onClick={() => {
+                      setStrikeOpen(true)
+                    }}
+                  >
+                    <Gavel className="size-4" />
+                    {striked ? "Striked" : "Strike"}
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </>
           )}
         </DropdownMenuContent>
@@ -267,6 +299,22 @@ export function PostActionsMenu({
           onOpenChange={setReportOpen}
           communityId={post.community.id}
           target={{ type: "post", id: post.id }}
+        />
+      ) : null}
+
+      {viewerIsAdmin && post.author?.id ? (
+        <StrikeDialog
+          open={strikeOpen}
+          onOpenChange={setStrikeOpen}
+          target={{
+            type: "post",
+            id: post.id,
+            authorUserId: post.author.id,
+            authorUsername: post.author.username,
+          }}
+          onStruck={() => {
+            setStriked(true)
+          }}
         />
       ) : null}
 

@@ -55,7 +55,7 @@ export default async function ProfilePostDetailPage({
     fetchPost(db).getRawById(postId),
     fetchPost(db).getOne(postId, ["removedAt", "profileUserId"]),
   ])
-  if (!raw || !meta || meta.removedAt !== null || meta.profileUserId !== profile.id) {
+  if (!raw || !meta || meta.profileUserId !== profile.id) {
     notFound()
   }
 

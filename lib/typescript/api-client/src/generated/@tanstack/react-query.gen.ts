@@ -111,12 +111,14 @@ import {
   getApiV1UserByUsernameByUsernameModerating,
   getApiV1UserByUsernameByUsernameOverview,
   getApiV1UserByUsernameByUsernameSocialLinks,
+  getApiV1UserByUsernameByUsernameStrikes,
   getApiV1UserFollowMine,
   getApiV1UserMe,
   getApiV1UserMeDownvoted,
   getApiV1UserMeHidden,
   getApiV1UserMeSaved,
   getApiV1UserMeSettings,
+  getApiV1UserMeStrikes,
   getApiV1UserMeUpvoted,
   getApiV1UserUsernameAvailable,
   getApiV1WikiByCommunityName,
@@ -495,6 +497,9 @@ import type {
   GetApiV1UserByUsernameByUsernameSocialLinksData,
   GetApiV1UserByUsernameByUsernameSocialLinksError,
   GetApiV1UserByUsernameByUsernameSocialLinksResponse,
+  GetApiV1UserByUsernameByUsernameStrikesData,
+  GetApiV1UserByUsernameByUsernameStrikesError,
+  GetApiV1UserByUsernameByUsernameStrikesResponse,
   GetApiV1UserFollowMineData,
   GetApiV1UserFollowMineResponse,
   GetApiV1UserMeData,
@@ -508,6 +513,8 @@ import type {
   GetApiV1UserMeSavedResponse,
   GetApiV1UserMeSettingsData,
   GetApiV1UserMeSettingsResponse,
+  GetApiV1UserMeStrikesData,
+  GetApiV1UserMeStrikesResponse,
   GetApiV1UserMeUpvotedData,
   GetApiV1UserMeUpvotedResponse,
   GetApiV1UserUsernameAvailableData,
@@ -1156,24 +1163,24 @@ export const getApiV1UserByUsernameByUsernameOptions = (
     queryKey: getApiV1UserByUsernameByUsernameQueryKey(options),
   })
 
-export const getApiV1UserByUsernameByUsernameCommentsQueryKey = (
-  options: Options<GetApiV1UserByUsernameByUsernameCommentsData>,
-) => createQueryKey("getApiV1UserByUsernameByUsernameComments", options)
+export const getApiV1UserByUsernameByUsernameStrikesQueryKey = (
+  options: Options<GetApiV1UserByUsernameByUsernameStrikesData>,
+) => createQueryKey("getApiV1UserByUsernameByUsernameStrikes", options)
 
 /**
- * A user's comments with post context, newest first
+ * Public record of a user's strikes and the content they were issued for, newest first
  */
-export const getApiV1UserByUsernameByUsernameCommentsOptions = (
-  options: Options<GetApiV1UserByUsernameByUsernameCommentsData>,
+export const getApiV1UserByUsernameByUsernameStrikesOptions = (
+  options: Options<GetApiV1UserByUsernameByUsernameStrikesData>,
 ) =>
   queryOptions<
-    GetApiV1UserByUsernameByUsernameCommentsResponse,
-    GetApiV1UserByUsernameByUsernameCommentsError,
-    GetApiV1UserByUsernameByUsernameCommentsResponse,
-    ReturnType<typeof getApiV1UserByUsernameByUsernameCommentsQueryKey>
+    GetApiV1UserByUsernameByUsernameStrikesResponse,
+    GetApiV1UserByUsernameByUsernameStrikesError,
+    GetApiV1UserByUsernameByUsernameStrikesResponse,
+    ReturnType<typeof getApiV1UserByUsernameByUsernameStrikesQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getApiV1UserByUsernameByUsernameComments({
+      const { data } = await getApiV1UserByUsernameByUsernameStrikes({
         ...options,
         ...queryKey[0],
         signal,
@@ -1181,7 +1188,7 @@ export const getApiV1UserByUsernameByUsernameCommentsOptions = (
       })
       return data
     },
-    queryKey: getApiV1UserByUsernameByUsernameCommentsQueryKey(options),
+    queryKey: getApiV1UserByUsernameByUsernameStrikesQueryKey(options),
   })
 
 const createInfiniteParams = <
@@ -1217,6 +1224,86 @@ const createInfiniteParams = <
   }
   return params as unknown as typeof page
 }
+
+export const getApiV1UserByUsernameByUsernameStrikesInfiniteQueryKey = (
+  options: Options<GetApiV1UserByUsernameByUsernameStrikesData>,
+): QueryKey<Options<GetApiV1UserByUsernameByUsernameStrikesData>> =>
+  createQueryKey("getApiV1UserByUsernameByUsernameStrikes", options, true)
+
+/**
+ * Public record of a user's strikes and the content they were issued for, newest first
+ */
+export const getApiV1UserByUsernameByUsernameStrikesInfiniteOptions = (
+  options: Options<GetApiV1UserByUsernameByUsernameStrikesData>,
+) => {
+  const opts = infiniteQueryOptions<
+    GetApiV1UserByUsernameByUsernameStrikesResponse,
+    GetApiV1UserByUsernameByUsernameStrikesError,
+    InfiniteData<GetApiV1UserByUsernameByUsernameStrikesResponse>,
+    QueryKey<Options<GetApiV1UserByUsernameByUsernameStrikesData>>,
+    | string
+    | Pick<
+        QueryKey<Options<GetApiV1UserByUsernameByUsernameStrikesData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetApiV1UserByUsernameByUsernameStrikesData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getApiV1UserByUsernameByUsernameStrikes({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getApiV1UserByUsernameByUsernameStrikesInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, "initialData">
+}
+
+export const getApiV1UserByUsernameByUsernameCommentsQueryKey = (
+  options: Options<GetApiV1UserByUsernameByUsernameCommentsData>,
+) => createQueryKey("getApiV1UserByUsernameByUsernameComments", options)
+
+/**
+ * A user's comments with post context, newest first
+ */
+export const getApiV1UserByUsernameByUsernameCommentsOptions = (
+  options: Options<GetApiV1UserByUsernameByUsernameCommentsData>,
+) =>
+  queryOptions<
+    GetApiV1UserByUsernameByUsernameCommentsResponse,
+    GetApiV1UserByUsernameByUsernameCommentsError,
+    GetApiV1UserByUsernameByUsernameCommentsResponse,
+    ReturnType<typeof getApiV1UserByUsernameByUsernameCommentsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1UserByUsernameByUsernameComments({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1UserByUsernameByUsernameCommentsQueryKey(options),
+  })
 
 export const getApiV1UserByUsernameByUsernameCommentsInfiniteQueryKey = (
   options: Options<GetApiV1UserByUsernameByUsernameCommentsData>,
@@ -1404,6 +1491,31 @@ export const getApiV1UserByUsernameByUsernameModeratingOptions = (
       return data
     },
     queryKey: getApiV1UserByUsernameByUsernameModeratingQueryKey(options),
+  })
+
+export const getApiV1UserMeStrikesQueryKey = (options?: Options<GetApiV1UserMeStrikesData>) =>
+  createQueryKey("getApiV1UserMeStrikes", options)
+
+/**
+ * The current user's non-revoked strikes. Strikes stop counting toward suspension 365 days after they are issued.
+ */
+export const getApiV1UserMeStrikesOptions = (options?: Options<GetApiV1UserMeStrikesData>) =>
+  queryOptions<
+    GetApiV1UserMeStrikesResponse,
+    DefaultError,
+    GetApiV1UserMeStrikesResponse,
+    ReturnType<typeof getApiV1UserMeStrikesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiV1UserMeStrikes({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getApiV1UserMeStrikesQueryKey(options),
   })
 
 export const getApiV1UserMeSavedQueryKey = (options?: Options<GetApiV1UserMeSavedData>) =>

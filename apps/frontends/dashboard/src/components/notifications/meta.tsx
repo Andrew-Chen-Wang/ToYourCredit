@@ -6,6 +6,7 @@ import {
   MessageSquare,
   PartyPopper,
   Shield,
+  ShieldAlert,
   UserPlus,
   type LucideIcon,
 } from "lucide-react"
@@ -49,6 +50,7 @@ const ICONS: Record<string, LucideIcon> = {
   chat_request: Mail,
   join_request_approved: PartyPopper,
   welcome: PartyPopper,
+  account_strike: ShieldAlert,
 }
 
 export function iconFor(type: string): LucideIcon {
@@ -89,6 +91,10 @@ export function describeNotification(n: NotificationItem): string {
         : "Your join request was approved"
     case "welcome":
       return "Welcome to ToYourCredit"
+    case "account_strike":
+      return count && count > 1
+        ? `Your account received a strike (${count} active)`
+        : "Your account received a strike"
     default:
       return n.type.replaceAll("_", " ")
   }
@@ -123,6 +129,8 @@ export function destinationFor(n: NotificationItem): string {
       return s?.communityName ? `/r/${s.communityName}` : "/notifications"
     case "welcome":
       return s?.communityName ? `/r/${s.communityName}` : "/"
+    case "account_strike":
+      return "/settings?tab=account"
     // mod_invite has no dedicated route (invites live in the AppSidebar banner).
     default:
       return "/notifications"
@@ -132,6 +140,7 @@ export function destinationFor(n: NotificationItem): string {
 /** Preview title/body snippet shown under the headline, if any. */
 export function snippetFor(n: NotificationItem): string | null {
   const s = n.previewSnapshot
+  if (n.type === "account_strike") return s?.body?.trim() ?? null
   const title = s?.title?.trim()
   if (title) return title
   const body = s?.body?.trim()

@@ -159,7 +159,8 @@ function ProfilePostDetailPage() {
                 isSpoiler: post.isSpoiler,
                 isOc: post.isOc,
                 isAuthor: post.isAuthor,
-                author: post.author ? { username: post.author.username } : null,
+                isStriked: post.isStriked,
+                author: post.author ? { id: post.author.id, username: post.author.username } : null,
                 community: null,
                 flair: null,
               }}

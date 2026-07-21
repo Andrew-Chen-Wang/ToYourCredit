@@ -269,6 +269,9 @@ import type {
   GetApiV1UserByUsernameByUsernameSocialLinksData,
   GetApiV1UserByUsernameByUsernameSocialLinksErrors,
   GetApiV1UserByUsernameByUsernameSocialLinksResponses,
+  GetApiV1UserByUsernameByUsernameStrikesData,
+  GetApiV1UserByUsernameByUsernameStrikesErrors,
+  GetApiV1UserByUsernameByUsernameStrikesResponses,
   GetApiV1UserFollowMineData,
   GetApiV1UserFollowMineResponses,
   GetApiV1UserMeData,
@@ -282,6 +285,8 @@ import type {
   GetApiV1UserMeSavedResponses,
   GetApiV1UserMeSettingsData,
   GetApiV1UserMeSettingsResponses,
+  GetApiV1UserMeStrikesData,
+  GetApiV1UserMeStrikesResponses,
   GetApiV1UserMeUpvotedData,
   GetApiV1UserMeUpvotedResponses,
   GetApiV1UserUsernameAvailableData,
@@ -783,6 +788,22 @@ export const getApiV1UserByUsernameByUsername = <ThrowOnError extends boolean = 
   >({ url: "/api/v1/user/by-username/{username}", ...options })
 
 /**
+ * Public record of a user's strikes and the content they were issued for, newest first
+ */
+export const getApiV1UserByUsernameByUsernameStrikes = <ThrowOnError extends boolean = false>(
+  options: Options<GetApiV1UserByUsernameByUsernameStrikesData, ThrowOnError>,
+): RequestResult<
+  GetApiV1UserByUsernameByUsernameStrikesResponses,
+  GetApiV1UserByUsernameByUsernameStrikesErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetApiV1UserByUsernameByUsernameStrikesResponses,
+    GetApiV1UserByUsernameByUsernameStrikesErrors,
+    ThrowOnError
+  >({ url: "/api/v1/user/by-username/{username}/strikes", ...options })
+
+/**
  * A user's comments with post context, newest first
  */
 export const getApiV1UserByUsernameByUsernameComments = <ThrowOnError extends boolean = false>(
@@ -845,6 +866,17 @@ export const getApiV1UserByUsernameByUsernameModerating = <ThrowOnError extends 
     GetApiV1UserByUsernameByUsernameModeratingErrors,
     ThrowOnError
   >({ url: "/api/v1/user/by-username/{username}/moderating", ...options })
+
+/**
+ * The current user's non-revoked strikes. Strikes stop counting toward suspension 365 days after they are issued.
+ */
+export const getApiV1UserMeStrikes = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiV1UserMeStrikesData, ThrowOnError>,
+): RequestResult<GetApiV1UserMeStrikesResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetApiV1UserMeStrikesResponses, unknown, ThrowOnError>({
+    url: "/api/v1/user/me/strikes",
+    ...options,
+  })
 
 /**
  * The current user's saved posts or comments

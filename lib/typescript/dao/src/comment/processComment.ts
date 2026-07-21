@@ -25,6 +25,7 @@ export interface ProcessedComment {
   isSticky: boolean
   isDeleted: boolean
   removedByMod: boolean
+  isStriked: boolean
   createdAt: string
   editedAt: string | null
   userVote: number
@@ -47,7 +48,7 @@ export async function processComments(
   const commentIds = rows.map((r) => r.id)
   const authorIds = unique(rows.map((r) => r.authorUserId))
 
-  const [voteRows, authorRows] = await Promise.all([
+  const [voteRows, authorRows, strikeRows] = await Promise.all([
     viewerId
       ? db
           .selectFrom("commentVote")
@@ -63,9 +64,16 @@ export async function processComments(
           .where("id", "in", authorIds)
           .execute()
       : Promise.resolve([] as ProcessedCommentAuthor[]),
+    db
+      .selectFrom("userStrike")
+      .select("commentId")
+      .where("commentId", "in", commentIds)
+      .where("revokedAt", "is", null)
+      .execute(),
   ])
 
   const voteByComment = new Map(voteRows.map((v) => [v.commentId, v.value]))
+  const strikedCommentIds = new Set(strikeRows.map((s) => s.commentId))
   const authorById = new Map(authorRows.map((a) => [a.id, a]))
 
   const fetchedChildCount = new Map<string, number>()
@@ -77,7 +85,8 @@ export async function processComments(
   return rows.map((r) => {
     const removedByMod = r.removedAt !== null
     const author = r.authorUserId ? (authorById.get(r.authorUserId) ?? null) : null
-    const bodyMd = removedByMod && !viewerIsMod ? null : r.bodyMd
+    const viewerIsCommentAuthor = viewerId !== null && r.authorUserId === viewerId
+    const bodyMd = removedByMod && !viewerIsMod && !viewerIsCommentAuthor ? null : r.bodyMd
     return {
       id: r.id,
       postId: r.postId,
@@ -93,6 +102,7 @@ export async function processComments(
       isSticky: r.isSticky,
       isDeleted: r.isDeleted,
       removedByMod,
+      isStriked: strikedCommentIds.has(r.id),
       createdAt: r.createdAt.toISOString(),
       editedAt: r.editedAt ? r.editedAt.toISOString() : null,
       userVote: voteByComment.get(r.id) ?? 0,

@@ -328,6 +328,23 @@ export async function emitUserBanned(
   })
 }
 
+export async function emitAccountStrike(
+  db: Kysely<DB>,
+  args: { userId: string; reason: string; activeCount: number },
+): Promise<void> {
+  // Site-level notice: actorUserId stays null so the issuing admin is not
+  // exposed and the self/block suppression in emit() does not apply.
+  await crudNotification(db).emit("account_strike", {
+    userId: args.userId,
+    actorUserId: null,
+    previewSnapshot: {
+      title: "Your account received a strike",
+      body: preview(args.reason, PREVIEW_LEN),
+      count: args.activeCount,
+    },
+  })
+}
+
 export async function emitChatRequest(
   db: Kysely<DB>,
   args: { recipientUserId: string; actorUserId: string; conversationId: string },

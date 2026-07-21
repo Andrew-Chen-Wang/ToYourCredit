@@ -27,6 +27,8 @@ export type CommentTreeCallbacks = {
   onShare?: (node: CommentNode) => void
   onEdit?: (node: CommentNode) => void
   onDelete?: (node: CommentNode) => void
+  /** Admin-only: open the strike dialog for this comment. */
+  onStrike?: (node: CommentNode) => void
   /** SPA: fetch the next page of a node's direct replies. */
   onLoadReplies?: (node: CommentNode) => void
   loadingReplies?: ReadonlySet<string>
@@ -158,6 +160,7 @@ export function CommentTree({
           onShare={callbacks.onShare ? () => callbacks.onShare?.(node) : undefined}
           onEdit={callbacks.onEdit ? () => callbacks.onEdit?.(node) : undefined}
           onDelete={callbacks.onDelete ? () => callbacks.onDelete?.(node) : undefined}
+          onStrike={callbacks.onStrike ? () => callbacks.onStrike?.(node) : undefined}
           editor={isEditing ? callbacks.renderEditComposer?.(node) : undefined}
         />
 

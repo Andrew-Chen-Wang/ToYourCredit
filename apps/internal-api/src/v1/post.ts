@@ -9,6 +9,7 @@ import { crudPostMedia } from "@lib/dao/postMedia/crud"
 import { crudPostVote } from "@lib/dao/postVote/crud"
 import { fetchPostFlairTemplate } from "@lib/dao/postFlairTemplate/fetch"
 import { crudPostView } from "@lib/dao/postView/crud"
+import { fetchUserStrike } from "@lib/dao/userStrike/fetch"
 import { db } from "@template-nextjs/db"
 import { createMediaUploadPut, getExtensionForMediaContentType } from "@utils/aws"
 import { enqueueEsSyncPost, enqueueLinkPreviewFetch, enqueueMediaCleanup } from "@utils/queues"
@@ -17,6 +18,7 @@ import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
 import { verifiedMiddleware, authNoThrowMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
+import { ErrorCode } from "../utils/errors.enum"
 import { throwBadRequest, throwForbidden, throwNotFound } from "../utils/http-exception"
 import {
   postCardSchema,
@@ -123,7 +125,6 @@ const app = new Hono()
         if (!view.ok) return throwNotFound(c, "Post not found")
       }
 
-      const isAuthor = meta.authorUserId === (user?.id ?? null)
       let isMod = false
       if (meta.removedAt && meta.communityId && user) {
         const mod = await getCommunityAuthz(db).canModerate(
@@ -156,17 +157,7 @@ const app = new Hono()
             removalReasonId: meta.removalReasonId,
           })
         }
-        if (isAuthor) {
-          return c.json({ ...processed, removed: true, removedByMod })
-        }
-        return c.json({
-          ...processed,
-          bodyMd: null,
-          linkUrl: null,
-          media: [],
-          removed: true,
-          removedByMod,
-        })
+        return c.json({ ...processed, removed: true, removedByMod })
       }
 
       return c.json(processed)
@@ -421,6 +412,13 @@ const app = new Hono()
       const meta = await fetchPost(db).getOne(id, ["authorUserId", "type", "communityId"])
       if (!meta) return throwNotFound(c, "Post not found")
       if (meta.authorUserId !== user.id) return throwForbidden(c, "You cannot edit this post")
+      if (await fetchUserStrike(db).hasActiveForContent({ postId: id })) {
+        return throwForbidden(
+          c,
+          "This post received a moderation strike and cannot be edited",
+          ErrorCode.ContentStriked,
+        )
+      }
 
       if (body.bodyMd !== undefined && meta.type !== "text") {
         return throwBadRequest(c, "Only text posts can edit their body")
@@ -474,6 +472,14 @@ const app = new Hono()
     async (c) => {
       const user = c.var.user
       const { id } = c.req.valid("param")
+
+      if (await fetchUserStrike(db).hasActiveForContent({ postId: id })) {
+        return throwForbidden(
+          c,
+          "This post received a moderation strike and cannot be deleted",
+          ErrorCode.ContentStriked,
+        )
+      }
 
       const deleted = await crudPost(db).deleteOwn(id, user.id)
       if (!deleted) return throwNotFound(c, "Post not found")

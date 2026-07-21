@@ -35,6 +35,7 @@ export type ErrorObjectT = {
     | "ResourceAlreadyExists"
     | "ResourceLocked"
     | "OperationFailed"
+    | "ContentStriked"
     | "DataIntegrityViolation"
     | "RateLimitExceeded"
     | string
@@ -72,6 +73,7 @@ export type GetApiAdminUsersResponses = {
       createdAt: Date
       suspendedAt: Date | null
       suspensionReason: string | null
+      activeStrikeCount: number
     }>
     nextCursor: string | null
   }
@@ -142,6 +144,125 @@ export type PostApiAdminUsersByIdUnsuspendResponses = {
 
 export type PostApiAdminUsersByIdUnsuspendResponse =
   PostApiAdminUsersByIdUnsuspendResponses[keyof PostApiAdminUsersByIdUnsuspendResponses]
+
+export type PostApiAdminUsersByIdStrikeData = {
+  body?: {
+    reason: string
+    postId?: string | null
+    commentId?: string | null
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/admin/users/{id}/strike"
+}
+
+export type PostApiAdminUsersByIdStrikeErrors = {
+  /**
+   * Invalid strike request
+   */
+  400: ErrorResponseT
+  /**
+   * User not found
+   */
+  404: ErrorResponseT
+}
+
+export type PostApiAdminUsersByIdStrikeError =
+  PostApiAdminUsersByIdStrikeErrors[keyof PostApiAdminUsersByIdStrikeErrors]
+
+export type PostApiAdminUsersByIdStrikeResponses = {
+  /**
+   * Strike issued
+   */
+  200: {
+    id: string
+    activeCount: number
+    suspended: boolean
+  }
+}
+
+export type PostApiAdminUsersByIdStrikeResponse =
+  PostApiAdminUsersByIdStrikeResponses[keyof PostApiAdminUsersByIdStrikeResponses]
+
+export type PostApiAdminUsersByIdStrikeByStrikeIdRevokeData = {
+  body?: never
+  path: {
+    id: string
+    strikeId: string
+  }
+  query?: never
+  url: "/api/admin/users/{id}/strike/{strikeId}/revoke"
+}
+
+export type PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors = {
+  /**
+   * Strike already revoked
+   */
+  400: ErrorResponseT
+  /**
+   * Strike not found
+   */
+  404: ErrorResponseT
+}
+
+export type PostApiAdminUsersByIdStrikeByStrikeIdRevokeError =
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors[keyof PostApiAdminUsersByIdStrikeByStrikeIdRevokeErrors]
+
+export type PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses = {
+  /**
+   * Strike revoked
+   */
+  200: {
+    [key: string]: unknown
+  }
+}
+
+export type PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponse =
+  PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses[keyof PostApiAdminUsersByIdStrikeByStrikeIdRevokeResponses]
+
+export type GetApiAdminUsersByIdStrikesData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/api/admin/users/{id}/strikes"
+}
+
+export type GetApiAdminUsersByIdStrikesErrors = {
+  /**
+   * User not found
+   */
+  404: ErrorResponseT
+}
+
+export type GetApiAdminUsersByIdStrikesError =
+  GetApiAdminUsersByIdStrikesErrors[keyof GetApiAdminUsersByIdStrikesErrors]
+
+export type GetApiAdminUsersByIdStrikesResponses = {
+  /**
+   * Strikes for the user
+   */
+  200: {
+    data: Array<{
+      id: string
+      reason: string
+      postId: string | null
+      commentId: string | null
+      createdAt: Date
+      revokedAt: Date | null
+      issuedByUsername: string | null
+      revokedByUsername: string | null
+      active: boolean
+    }>
+    activeCount: number
+  }
+}
+
+export type GetApiAdminUsersByIdStrikesResponse =
+  GetApiAdminUsersByIdStrikesResponses[keyof GetApiAdminUsersByIdStrikesResponses]
 
 export type GetApiAdminPostsData = {
   body?: never

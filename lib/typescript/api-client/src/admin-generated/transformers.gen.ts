@@ -4,6 +4,7 @@ import type {
   GetApiAdminInviteCodeResponse,
   GetApiAdminOnboardingResponse,
   GetApiAdminPostsResponse,
+  GetApiAdminUsersByIdStrikesResponse,
   GetApiAdminUsersResponse,
   PostApiAdminInviteCodeResponse,
 } from "./types.gen"
@@ -15,6 +16,19 @@ export const getApiAdminUsersResponseTransformer = async (
     item.createdAt = new Date(item.createdAt)
     if (item.suspendedAt) {
       item.suspendedAt = new Date(item.suspendedAt)
+    }
+    return item
+  })
+  return data
+}
+
+export const getApiAdminUsersByIdStrikesResponseTransformer = async (
+  data: any,
+): Promise<GetApiAdminUsersByIdStrikesResponse> => {
+  data.data = data.data.map((item: any) => {
+    item.createdAt = new Date(item.createdAt)
+    if (item.revokedAt) {
+      item.revokedAt = new Date(item.revokedAt)
     }
     return item
   })

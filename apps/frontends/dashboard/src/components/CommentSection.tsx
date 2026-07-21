@@ -23,6 +23,7 @@ import { CommentComposer } from "@ui/seo-shared/comment/CommentComposer"
 import { CommentSkeleton } from "@ui/seo-shared/comment/CommentSkeleton"
 import { CommentSorter } from "@ui/seo-shared/comment/CommentSorter"
 import { CommentTree, type CommentTreeCallbacks } from "@ui/seo-shared/comment/CommentTree"
+import { StrikeDialog } from "@frontends/dashboard/components/StrikeDialog"
 import {
   CommentVoteContext,
   VotableCommentNodeView,
@@ -106,6 +107,9 @@ export function CommentSection({
   const [topDraft, setTopDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [deletingNode, setDeletingNode] = useState<CommentNode | null>(null)
+  const [strikingNode, setStrikingNode] = useState<CommentNode | null>(null)
+
+  const viewerIsAdmin = meQuery.data?.isAdmin === true
 
   // Seed local state from the base query once per (sort, focus) so background
   // refetches don't clobber locally-loaded replies / pagination.
@@ -379,6 +383,11 @@ export function CommentSection({
     onDelete: (node) => {
       setDeletingNode(node)
     },
+    onStrike: viewerIsAdmin
+      ? (node) => {
+          setStrikingNode(node)
+        }
+      : undefined,
     onLoadReplies: (node) => {
       void loadReplies(node)
     },
@@ -523,6 +532,28 @@ export function CommentSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {strikingNode?.author ? (
+        <StrikeDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setStrikingNode(null)
+          }}
+          target={{
+            type: "comment",
+            id: strikingNode.id,
+            authorUserId: strikingNode.author.id,
+            authorUsername: strikingNode.author.username,
+          }}
+          onStruck={() => {
+            const struckId = strikingNode.id
+            setFlat((prev) => prev.map((n) => (n.id === struckId ? { ...n, isStriked: true } : n)))
+            setAncestors((prev) =>
+              prev.map((n) => (n.id === struckId ? { ...n, isStriked: true } : n)),
+            )
+          }}
+        />
+      ) : null}
     </section>
   )
 }

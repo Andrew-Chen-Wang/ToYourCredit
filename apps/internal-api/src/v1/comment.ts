@@ -7,6 +7,7 @@ import { fetchCommunity } from "@lib/dao/community/fetch"
 import { emitCommentReplyAndMentions } from "@lib/dao/notification/emit-helpers"
 import { fetchPost } from "@lib/dao/post/fetch"
 import { fetchUserBlock } from "@lib/dao/userBlock/fetch"
+import { fetchUserStrike } from "@lib/dao/userStrike/fetch"
 import { db } from "@template-nextjs/db"
 import { enqueueEsSyncComment } from "@utils/queues"
 import { Hono } from "hono"
@@ -14,6 +15,7 @@ import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
 import { verifiedMiddleware, authNoThrowMiddleware } from "../middleware"
 import { EmptyObject, ErrorSchemaResponse, IdParamT } from "../utils/common.serializer"
+import { ErrorCode } from "../utils/errors.enum"
 import { decodeCursor } from "../utils/pagination"
 import {
   throwBadRequest,
@@ -83,7 +85,6 @@ const app = new Hono()
         if (!view.ok) return throwNotFound(c, "Post not found")
       }
 
-      const isAuthor = meta.authorUserId === (user?.id ?? null)
       let isMod = false
       if (meta.communityId && user) {
         const mod = await getCommunityAuthz(db).canModerate(
@@ -92,9 +93,6 @@ const app = new Hono()
           "posts_comments",
         )
         isMod = mod.ok
-      }
-      if (meta.removedAt && !isAuthor && !isMod) {
-        return throwNotFound(c, "Post not found")
       }
 
       const blockedIds = user
@@ -252,6 +250,13 @@ const app = new Hono()
       const meta = await fetchComment(db).getOne(id, ["authorUserId", "isDeleted"])
       if (!meta || meta.isDeleted) return throwNotFound(c, "Comment not found")
       if (meta.authorUserId !== user.id) return throwForbidden(c, "You cannot edit this comment")
+      if (await fetchUserStrike(db).hasActiveForContent({ commentId: id })) {
+        return throwForbidden(
+          c,
+          "This comment received a moderation strike and cannot be edited",
+          ErrorCode.ContentStriked,
+        )
+      }
 
       const updated = await crudComment(db).update(id, user.id, body.bodyMd)
       if (!updated) return throwNotFound(c, "Comment not found")
@@ -284,6 +289,14 @@ const app = new Hono()
     async (c) => {
       const user = c.var.user
       const { id } = c.req.valid("param")
+
+      if (await fetchUserStrike(db).hasActiveForContent({ commentId: id })) {
+        return throwForbidden(
+          c,
+          "This comment received a moderation strike and cannot be deleted",
+          ErrorCode.ContentStriked,
+        )
+      }
 
       const result = await crudComment(db).deleteOwn(id, user.id)
       if ("error" in result) {

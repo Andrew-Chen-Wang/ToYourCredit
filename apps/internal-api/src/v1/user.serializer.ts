@@ -26,6 +26,58 @@ export const userPublicSchemaResponse = Type.Object({
   postKarma: Type.Number(),
   commentKarma: Type.Number(),
   createdAt: Type.String({ format: "date-time" }),
+  strikeCount: Type.Number(),
+})
+
+export const userStrikesSchemaQuery = Type.Object({
+  cursor: Type.Optional(Type.String()),
+})
+
+export const userStrikesSchemaResponse = Type.Object({
+  data: Type.Array(
+    Type.Object({
+      id: UUID7String,
+      reason: Type.String(),
+      createdAt: Type.String({ format: "date-time" }),
+      active: Type.Boolean(),
+      contentHidden: Type.Boolean(),
+      post: Nullable(
+        Type.Object({
+          id: UUID7String,
+          title: Nullable(Type.String()),
+          bodyMd: Nullable(Type.String()),
+          communityId: Nullable(UUID7String),
+          communityName: Nullable(Type.String()),
+          removed: Type.Boolean(),
+        }),
+      ),
+      comment: Nullable(
+        Type.Object({
+          id: UUID7String,
+          bodyMd: Nullable(Type.String()),
+          postId: Nullable(UUID7String),
+          postTitle: Nullable(Type.String()),
+          communityId: Nullable(UUID7String),
+          communityName: Nullable(Type.String()),
+          removed: Type.Boolean(),
+        }),
+      ),
+    }),
+  ),
+  activeCount: Type.Number(),
+  nextCursor: Nullable(Type.String()),
+})
+
+export const userMeStrikesSchemaResponse = Type.Object({
+  data: Type.Array(
+    Type.Object({
+      id: UUID7String,
+      reason: Type.String(),
+      createdAt: Type.String({ format: "date-time" }),
+      active: Type.Boolean(),
+    }),
+  ),
+  activeCount: Type.Number(),
 })
 
 export const userUpdateSchemaRequest = Type.Object({
