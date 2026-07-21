@@ -42,7 +42,7 @@ export function fetchOnboardingApplication(db: Kysely<DB>) {
     let query = db
       .selectFrom("onboardingApplication")
       .innerJoin("user as applicant", "applicant.id", "onboardingApplication.userId")
-      .innerJoin("inviteCode", "inviteCode.id", "onboardingApplication.inviteCodeId")
+      .leftJoin("inviteCode", "inviteCode.id", "onboardingApplication.inviteCodeId")
       .leftJoin("user as inviter", "inviter.id", "inviteCode.createdByUserId")
       .select([
         "onboardingApplication.id",

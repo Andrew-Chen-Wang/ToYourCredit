@@ -393,7 +393,7 @@ export interface OnboardingApplication {
   createdAt: Generated<Timestamp>
   criticalThinkingLink: string
   id: string
-  inviteCodeId: string
+  inviteCodeId: string | null
   opinionLink: string
   profileLink: string
   rejectionReason: string | null

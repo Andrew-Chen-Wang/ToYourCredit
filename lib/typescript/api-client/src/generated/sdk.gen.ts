@@ -686,7 +686,7 @@ export const patchApiV1Onboarding = <ThrowOnError extends boolean = false>(
   })
 
 /**
- * Submit the onboarding application: an invite code plus four required public links (admin bypass codes skip the links and auto-verify)
+ * Submit the onboarding application: four required public links plus an optional invite code that records who referred you (admin bypass codes skip the links and auto-verify)
  */
 export const postApiV1Onboarding = <ThrowOnError extends boolean = false>(
   options?: Options<PostApiV1OnboardingData, ThrowOnError>,

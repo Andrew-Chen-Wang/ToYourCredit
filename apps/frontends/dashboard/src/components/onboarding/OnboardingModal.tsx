@@ -55,9 +55,10 @@ function isHttpUrl(value: string): boolean {
 
 /**
  * Membership-application modal shown to signed-in users who have not yet
- * submitted their invite code + four required links. Two steps: the code first,
- * then the links — admin superuser bypass codes skip the links entirely and
- * auto-verify on Next. Dismissible, but reopens on every navigation until done.
+ * submitted their application. Two steps: an optional invite code first (it only
+ * records who referred you), then the four required links — admin superuser
+ * bypass codes skip the links entirely and auto-verify on Next. Dismissible,
+ * but reopens on every navigation until done.
  */
 export function OnboardingModal() {
   const queryClient = useQueryClient()
@@ -79,7 +80,7 @@ export function OnboardingModal() {
   }, [routeKey])
 
   const submit = useMutation({
-    mutationFn: (body: { inviteCode: string } & Partial<Record<LinkKey, string>>) =>
+    mutationFn: (body: { inviteCode?: string } & Partial<Record<LinkKey, string>>) =>
       postApiV1Onboarding({ body, throwOnError: true }),
     onSuccess: ({ data }) => {
       toast.success(
@@ -90,7 +91,7 @@ export function OnboardingModal() {
       void queryClient.invalidateQueries({ queryKey: getApiV1AuthMeOptions().queryKey })
     },
     onError: () => {
-      toast.error("Could not submit your application. Check the invite code and links.")
+      toast.error("Could not submit your application. Check the links and try again.")
     },
   })
 
@@ -117,7 +118,6 @@ export function OnboardingModal() {
     },
   })
 
-  const codeReady = inviteCode.trim().length > 0
   const linksValid = LINK_FIELDS.every((f) => isHttpUrl(links[f.key].trim()))
   const busy = checkCode.isPending || submit.isPending
 
@@ -127,9 +127,9 @@ export function OnboardingModal() {
         <DialogHeader>
           <DialogTitle>Complete your membership application</DialogTitle>
           <DialogDescription>
-            ToYourCredit is an invite-only community for serious political-policy discussion. Until
-            your application is approved you can read and save content, but not post, comment, or
-            vote.
+            ToYourCredit is an application-based community for serious political-policy discussion.
+            Until your application is approved you can read and save content, but not post, comment,
+            or vote.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,9 +138,13 @@ export function OnboardingModal() {
             className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault()
-              if (codeReady && !busy) {
-                setCodeError(null)
+              if (busy) return
+              setCodeError(null)
+              // No code entered: the code is optional, go straight to the links.
+              if (inviteCode.trim()) {
                 checkCode.mutate()
+              } else {
+                setStep("links")
               }
             }}
           >
@@ -160,7 +164,7 @@ export function OnboardingModal() {
                 <p className="text-xs text-destructive">{codeError}</p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  A single-use code from an existing member.
+                  Optional — a single-use code from an existing member, so we know who referred you.
                 </p>
               )}
             </div>
@@ -174,7 +178,7 @@ export function OnboardingModal() {
               >
                 Later
               </Button>
-              <LoadingButton type="submit" disabled={!codeReady} loading={busy}>
+              <LoadingButton type="submit" loading={busy}>
                 Next
               </LoadingButton>
             </div>
@@ -185,7 +189,8 @@ export function OnboardingModal() {
             onSubmit={(e) => {
               e.preventDefault()
               if (linksValid && !busy) {
-                submit.mutate({ inviteCode: inviteCode.trim(), ...links })
+                const code = inviteCode.trim()
+                submit.mutate({ ...(code ? { inviteCode: code } : {}), ...links })
               }
             }}
           >
@@ -231,6 +236,17 @@ export function OnboardingModal() {
             </div>
           </form>
         )}
+
+        <div className="flex items-center justify-center gap-2" aria-hidden="true">
+          {(["code", "links"] as const).map((s) => (
+            <span
+              key={s}
+              className={`size-2 rounded-full transition-colors ${
+                step === s ? "bg-primary" : "bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
       </DialogContent>
     </Dialog>
   )

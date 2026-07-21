@@ -25,7 +25,7 @@ class LinksRequiredError extends Error {}
 export function crudOnboardingApplication(db: Kysely<DB>) {
   async function submit(
     userId: string,
-    inviteCode: string,
+    inviteCode: string | null,
     links: OnboardingLinks | null,
   ): Promise<SubmitApplicationResult> {
     const existing = await db
@@ -38,10 +38,14 @@ export function crudOnboardingApplication(db: Kysely<DB>) {
     return await db
       .transaction()
       .execute(async (trx) => {
-        const consumed = await crudInviteCode(trx).consumeCode(inviteCode, userId)
-        if (!consumed) return { ok: false as const, reason: "INVALID_CODE" as const }
+        const consumed = inviteCode
+          ? await crudInviteCode(trx).consumeCode(inviteCode, userId)
+          : null
+        if (inviteCode && !consumed) {
+          return { ok: false as const, reason: "INVALID_CODE" as const }
+        }
 
-        if (consumed.isSuperuser) {
+        if (consumed?.isSuperuser) {
           // Admin bypass: no application to review, straight to verified.
           await trx
             .updateTable("user")
@@ -56,7 +60,7 @@ export function crudOnboardingApplication(db: Kysely<DB>) {
 
         const application = await trx
           .insertInto("onboardingApplication")
-          .values({ id: v7(), userId, inviteCodeId: consumed.id, ...links })
+          .values({ id: v7(), userId, inviteCodeId: consumed?.id ?? null, ...links })
           .returningAll()
           .executeTakeFirstOrThrow()
 

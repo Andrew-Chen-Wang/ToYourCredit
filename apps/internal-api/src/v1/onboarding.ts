@@ -77,7 +77,7 @@ const app = new Hono()
     "/",
     describeRoute({
       description:
-        "Submit the onboarding application: an invite code plus four required public links (admin bypass codes skip the links and auto-verify)",
+        "Submit the onboarding application: four required public links plus an optional invite code that records who referred you (admin bypass codes skip the links and auto-verify)",
       responses: {
         201: {
           description: "Application submitted",
@@ -112,9 +112,11 @@ const app = new Hono()
             }
           : null
 
+      // A whitespace-only code counts as no code at all.
+      const trimmedCode = body.inviteCode?.trim()
       const result = await crudOnboardingApplication(db).submit(
         user.id,
-        body.inviteCode.trim().toUpperCase(),
+        trimmedCode?.length ? trimmedCode.toUpperCase() : null,
         links,
       )
       if (!result.ok) {
@@ -126,7 +128,7 @@ const app = new Hono()
           )
         }
         if (result.reason === "LINKS_REQUIRED") {
-          return throwBadRequest(c, "All four links are required for this invite code")
+          return throwBadRequest(c, "All four links are required")
         }
         return throwBadRequest(c, "That invite code is not valid", ErrorCode.InviteCodeInvalid, {
           target: "inviteCode",

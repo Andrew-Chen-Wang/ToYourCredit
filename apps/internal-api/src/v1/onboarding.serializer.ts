@@ -4,7 +4,7 @@ import { Nullable, UUID7String } from "../utils/common.serializer"
 const link = Type.String({ pattern: "^https?://\\S+$", minLength: 8, maxLength: 2000 })
 
 export const onboardingSchemaRequest = Type.Object({
-  inviteCode: Type.String({ minLength: 1, maxLength: 50 }),
+  inviteCode: Type.Optional(Type.String({ minLength: 1, maxLength: 50 })),
   profileLink: Type.Optional(link),
   opinionLink: Type.Optional(link),
   criticalThinkingLink: Type.Optional(link),

@@ -198,7 +198,7 @@ export type PatchApiV1OnboardingResponse =
 
 export type PostApiV1OnboardingData = {
   body?: {
-    inviteCode: string
+    inviteCode?: string
     profileLink?: string
     opinionLink?: string
     criticalThinkingLink?: string
