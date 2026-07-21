@@ -149,6 +149,37 @@ export type PostApiV1OnboardingCheckCodeResponses = {
 export type PostApiV1OnboardingCheckCodeResponse =
   PostApiV1OnboardingCheckCodeResponses[keyof PostApiV1OnboardingCheckCodeResponses]
 
+export type PostApiV1OnboardingUsernameData = {
+  body?: {
+    username: string
+  }
+  path?: never
+  query?: never
+  url: "/api/v1/onboarding/username"
+}
+
+export type PostApiV1OnboardingUsernameErrors = {
+  /**
+   * Username taken, or user is past onboarding
+   */
+  400: ErrorResponseT
+}
+
+export type PostApiV1OnboardingUsernameError =
+  PostApiV1OnboardingUsernameErrors[keyof PostApiV1OnboardingUsernameErrors]
+
+export type PostApiV1OnboardingUsernameResponses = {
+  /**
+   * Username claimed
+   */
+  200: {
+    username: string
+  }
+}
+
+export type PostApiV1OnboardingUsernameResponse =
+  PostApiV1OnboardingUsernameResponses[keyof PostApiV1OnboardingUsernameResponses]
+
 export type PatchApiV1OnboardingData = {
   body?: {
     profileLink: string

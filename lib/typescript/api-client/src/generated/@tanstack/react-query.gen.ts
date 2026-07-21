@@ -202,6 +202,7 @@ import {
   postApiV1NotificationReadAll,
   postApiV1Onboarding,
   postApiV1OnboardingCheckCode,
+  postApiV1OnboardingUsername,
   postApiV1Post,
   postApiV1PostActionShareByPostId,
   postApiV1RemovalReasonByCommunityId,
@@ -755,6 +756,9 @@ import type {
   PostApiV1OnboardingData,
   PostApiV1OnboardingError,
   PostApiV1OnboardingResponse,
+  PostApiV1OnboardingUsernameData,
+  PostApiV1OnboardingUsernameError,
+  PostApiV1OnboardingUsernameResponse,
   PostApiV1PostActionShareByPostIdData,
   PostApiV1PostActionShareByPostIdError,
   PostApiV1PostActionShareByPostIdResponse,
@@ -965,6 +969,33 @@ export const postApiV1OnboardingCheckCodeMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await postApiV1OnboardingCheckCode({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Claim a username during onboarding. Only available while unverified; does not consume the one-time username change and may be repeated until verification
+ */
+export const postApiV1OnboardingUsernameMutation = (
+  options?: Partial<Options<PostApiV1OnboardingUsernameData>>,
+): UseMutationOptions<
+  PostApiV1OnboardingUsernameResponse,
+  PostApiV1OnboardingUsernameError,
+  Options<PostApiV1OnboardingUsernameData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PostApiV1OnboardingUsernameResponse,
+    PostApiV1OnboardingUsernameError,
+    Options<PostApiV1OnboardingUsernameData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postApiV1OnboardingUsername({
         ...options,
         ...fnOptions,
         throwOnError: true,

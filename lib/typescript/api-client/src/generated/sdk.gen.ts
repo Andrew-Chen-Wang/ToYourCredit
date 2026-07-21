@@ -527,6 +527,9 @@ import type {
   PostApiV1OnboardingData,
   PostApiV1OnboardingErrors,
   PostApiV1OnboardingResponses,
+  PostApiV1OnboardingUsernameData,
+  PostApiV1OnboardingUsernameErrors,
+  PostApiV1OnboardingUsernameResponses,
   PostApiV1PostActionShareByPostIdData,
   PostApiV1PostActionShareByPostIdErrors,
   PostApiV1PostActionShareByPostIdResponses,
@@ -664,6 +667,29 @@ export const postApiV1OnboardingCheckCode = <ThrowOnError extends boolean = fals
 ): RequestResult<PostApiV1OnboardingCheckCodeResponses, unknown, ThrowOnError> =>
   (options?.client ?? client).post<PostApiV1OnboardingCheckCodeResponses, unknown, ThrowOnError>({
     url: "/api/v1/onboarding/check-code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  })
+
+/**
+ * Claim a username during onboarding. Only available while unverified; does not consume the one-time username change and may be repeated until verification
+ */
+export const postApiV1OnboardingUsername = <ThrowOnError extends boolean = false>(
+  options?: Options<PostApiV1OnboardingUsernameData, ThrowOnError>,
+): RequestResult<
+  PostApiV1OnboardingUsernameResponses,
+  PostApiV1OnboardingUsernameErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    PostApiV1OnboardingUsernameResponses,
+    PostApiV1OnboardingUsernameErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/onboarding/username",
     ...options,
     headers: {
       "Content-Type": "application/json",

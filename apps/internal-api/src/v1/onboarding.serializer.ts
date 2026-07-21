@@ -20,6 +20,14 @@ export const onboardingCheckCodeSchemaResponse = Type.Object({
   superuser: Type.Boolean(),
 })
 
+export const onboardingUsernameSchemaRequest = Type.Object({
+  username: Type.String({ minLength: 3, maxLength: 20, pattern: "^[A-Za-z0-9_-]+$" }),
+})
+
+export const onboardingUsernameSchemaResponse = Type.Object({
+  username: Type.String(),
+})
+
 export const onboardingUpdateSchemaRequest = Type.Object({
   profileLink: link,
   opinionLink: link,

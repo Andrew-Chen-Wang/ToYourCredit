@@ -1,6 +1,12 @@
-import { crudOnboardingApplication, fetchInviteCode, fetchOnboardingApplication } from "@lib/dao"
+import {
+  crudOnboardingApplication,
+  crudUser,
+  fetchInviteCode,
+  fetchOnboardingApplication,
+} from "@lib/dao"
 import type { DB } from "@template-nextjs/db"
 import { db } from "@template-nextjs/db"
+import { enqueueEsSyncUser } from "@utils/queues"
 import { Hono } from "hono"
 import { describeRoute } from "hono-typebox-openapi"
 import { resolver, validator } from "hono-typebox-openapi/typebox"
@@ -16,6 +22,8 @@ import {
   onboardingSchemaRequest,
   onboardingSchemaResponse,
   onboardingUpdateSchemaRequest,
+  onboardingUsernameSchemaRequest,
+  onboardingUsernameSchemaResponse,
 } from "./onboarding.serializer"
 
 function serializeApplication(application: Selectable<DB["onboardingApplication"]>) {
@@ -71,6 +79,44 @@ const app = new Hono()
         valid: code?.active === true,
         superuser: code?.active === true && code.isSuperuser,
       })
+    },
+  )
+  .post(
+    "/username",
+    describeRoute({
+      description:
+        "Claim a username during onboarding. Only available while unverified; does not consume the one-time username change and may be repeated until verification",
+      responses: {
+        200: {
+          description: "Username claimed",
+          content: { "application/json": { schema: resolver(onboardingUsernameSchemaResponse) } },
+        },
+        400: {
+          description: "Username taken, or user is past onboarding",
+          content: { "application/json": { schema: resolver(ErrorSchemaResponse) } },
+        },
+      },
+    }),
+    validator("json", onboardingUsernameSchemaRequest),
+    async (c) => {
+      const user = c.var.user
+      if (user.verificationStatus !== "unverified") {
+        return throwBadRequest(c, "Usernames can only be claimed during onboarding")
+      }
+
+      const { username } = c.req.valid("json")
+      const result = await crudUser(db).claimUsername(user.id, username)
+      if (!result.ok) {
+        if (result.reason === "TAKEN") {
+          return throwBadRequest(c, "That username is taken", ErrorCode.ResourceAlreadyExists, {
+            target: "username",
+          })
+        }
+        return throwNotFound(c, "User not found")
+      }
+      await enqueueEsSyncUser(user.id)
+
+      return c.json({ username: result.username })
     },
   )
   .post(

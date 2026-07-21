@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouterState } from "@tanstack/react-router"
 import { Button } from "@ui/base/ui/button"
 import {
@@ -12,10 +12,15 @@ import {
 import { Input } from "@ui/base/ui/input"
 import { Label } from "@ui/base/ui/label"
 import { LoadingButton } from "@ui/base/ui/loading-button"
-import { getApiV1AuthMeOptions } from "@lib/api-client/generated/@tanstack/react-query.gen"
+import {
+  getApiV1AuthMeOptions,
+  getApiV1UserMeOptions,
+  getApiV1UserUsernameAvailableOptions,
+} from "@lib/api-client/generated/@tanstack/react-query.gen"
 import {
   postApiV1Onboarding,
   postApiV1OnboardingCheckCode,
+  postApiV1OnboardingUsername,
 } from "@lib/api-client/generated/sdk.gen"
 import { toast } from "sonner"
 
@@ -44,6 +49,8 @@ const LINK_FIELDS = [
 
 type LinkKey = (typeof LINK_FIELDS)[number]["key"]
 
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]{3,20}$/
+
 function isHttpUrl(value: string): boolean {
   try {
     const url = new URL(value)
@@ -55,7 +62,8 @@ function isHttpUrl(value: string): boolean {
 
 /**
  * Membership-application modal shown to signed-in users who have not yet
- * submitted their application. Two steps: an optional invite code first (it only
+ * submitted their application. Three steps: claim a username (first-come-first-served,
+ * doesn't consume the one-time change), then an optional invite code (it only
  * records who referred you), then the four required links — admin superuser
  * bypass codes skip the links entirely and auto-verify on Next. Dismissible,
  * but reopens on every navigation until done.
@@ -63,7 +71,7 @@ function isHttpUrl(value: string): boolean {
 export function OnboardingModal() {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(true)
-  const [step, setStep] = useState<"code" | "links">("code")
+  const [step, setStep] = useState<"username" | "code" | "links">("username")
   const [inviteCode, setInviteCode] = useState("")
   const [codeError, setCodeError] = useState<string | null>(null)
   const [links, setLinks] = useState<Record<LinkKey, string>>({
@@ -72,6 +80,20 @@ export function OnboardingModal() {
     criticalThinkingLink: "",
     acceptWrongLink: "",
   })
+
+  const { data: me } = useQuery(getApiV1UserMeOptions())
+  const [username, setUsername] = useState<string | null>(null)
+  // Seed the draft with the auto-generated username once loaded.
+  const draft = username ?? me?.username ?? ""
+  const [debouncedDraft, setDebouncedDraft] = useState("")
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedDraft(draft.trim())
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [draft])
 
   // Reopen whenever the user navigates somewhere else.
   const routeKey = useRouterState({ select: (s) => s.location.pathname })
@@ -92,6 +114,27 @@ export function OnboardingModal() {
     },
     onError: () => {
       toast.error("Could not submit your application. Check the links and try again.")
+    },
+  })
+
+  // Own current username reads as "taken" from this endpoint, so skip the check
+  // when the draft is unchanged — keeping it is always allowed.
+  const isOwnUsername = debouncedDraft.toLowerCase() === me?.username.toLowerCase()
+  const availability = useQuery({
+    ...getApiV1UserUsernameAvailableOptions({ query: { username: debouncedDraft } }),
+    enabled: USERNAME_PATTERN.test(debouncedDraft) && me != null && !isOwnUsername,
+  })
+
+  const claim = useMutation({
+    mutationFn: (claimed: string) =>
+      postApiV1OnboardingUsername({ body: { username: claimed }, throwOnError: true }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getApiV1UserMeOptions().queryKey })
+      setStep("code")
+    },
+    onError: () => {
+      toast.error("Could not claim that username — it may have just been taken.")
+      void availability.refetch()
     },
   })
 
@@ -119,7 +162,11 @@ export function OnboardingModal() {
   })
 
   const linksValid = LINK_FIELDS.every((f) => isHttpUrl(links[f.key].trim()))
-  const busy = checkCode.isPending || submit.isPending
+  const busy = claim.isPending || checkCode.isPending || submit.isPending
+
+  const usernameValid = USERNAME_PATTERN.test(draft.trim())
+  const usernameTaken =
+    !isOwnUsername && debouncedDraft === draft.trim() && availability.data?.available === false
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -133,7 +180,64 @@ export function OnboardingModal() {
           </DialogDescription>
         </DialogHeader>
 
-        {step === "code" ? (
+        {step === "username" ? (
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (busy || !usernameValid || usernameTaken) return
+              const next = draft.trim()
+              // Keeping the current name needs no claim.
+              if (next.toLowerCase() === me?.username.toLowerCase()) {
+                setStep("code")
+                return
+              }
+              claim.mutate(next)
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="onboarding-username">Username</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">u/</span>
+                <Input
+                  id="onboarding-username"
+                  value={draft}
+                  maxLength={20}
+                  autoComplete="off"
+                  onChange={(e) => {
+                    setUsername(e.target.value.replace(/\s/g, ""))
+                  }}
+                />
+              </div>
+              {usernameTaken ? (
+                <p className="text-xs text-destructive">That username is taken.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Claim your username now — this doesn&apos;t use your one-time username change
+                  later. 3-20 letters, numbers, underscores, or hyphens.
+                </p>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setOpen(false)
+                }}
+              >
+                Later
+              </Button>
+              <LoadingButton
+                type="submit"
+                disabled={!usernameValid || usernameTaken}
+                loading={claim.isPending}
+              >
+                Next
+              </LoadingButton>
+            </div>
+          </form>
+        ) : step === "code" ? (
           <form
             className="flex flex-col gap-4"
             onSubmit={(e) => {
@@ -168,19 +272,30 @@ export function OnboardingModal() {
                 </p>
               )}
             </div>
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-between gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  setOpen(false)
+                  setStep("username")
                 }}
               >
-                Later
+                Back
               </Button>
-              <LoadingButton type="submit" loading={busy}>
-                Next
-              </LoadingButton>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false)
+                  }}
+                >
+                  Later
+                </Button>
+                <LoadingButton type="submit" loading={busy}>
+                  Next
+                </LoadingButton>
+              </div>
             </div>
           </form>
         ) : (
@@ -238,7 +353,7 @@ export function OnboardingModal() {
         )}
 
         <div className="flex items-center justify-center gap-2" aria-hidden="true">
-          {(["code", "links"] as const).map((s) => (
+          {(["username", "code", "links"] as const).map((s) => (
             <span
               key={s}
               className={`size-2 rounded-full transition-colors ${

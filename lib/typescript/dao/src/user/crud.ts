@@ -63,6 +63,33 @@ export function crudUser(db: Kysely<DB>) {
     }
   }
 
+  /**
+   * Onboarding username claim: only offered while the user is unverified
+   * (enforced at the API layer). Unlike changeUsername this does not consume
+   * the one-time change (usernameChangedAt stays null) and may be repeated.
+   * The lower(username) unique index enforces first-come-first-served.
+   */
+  async function claimUsername(
+    id: string,
+    username: string,
+  ): Promise<{ ok: true; username: string } | { ok: false; reason: "TAKEN" | "NOT_FOUND" }> {
+    try {
+      const row = await db
+        .updateTable("user")
+        .set({ username })
+        .where("id", "=", id)
+        .returning("username")
+        .executeTakeFirst()
+      if (!row) return { ok: false, reason: "NOT_FOUND" }
+      return { ok: true, username: row.username }
+    } catch (error) {
+      if (error instanceof Error && /user_username_lower_key|unique/i.test(error.message)) {
+        return { ok: false, reason: "TAKEN" }
+      }
+      throw error
+    }
+  }
+
   async function suspend(id: string, reason: string | null): Promise<boolean> {
     const result = await db
       .updateTable("user")
@@ -81,5 +108,5 @@ export function crudUser(db: Kysely<DB>) {
     return (result.numUpdatedRows ?? 0n) > 0n
   }
 
-  return { createUser, updateUser, deleteUser, changeUsername, suspend, unsuspend }
+  return { createUser, updateUser, deleteUser, changeUsername, claimUsername, suspend, unsuspend }
 }
