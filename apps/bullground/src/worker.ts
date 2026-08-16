@@ -9,6 +9,8 @@ import {
 import { type Job, Worker } from "bullmq"
 import { processDraftExpiry } from "./jobs/draftExpiry"
 import { processEsBackfill } from "./jobs/esBackfill"
+import { processFeedIngestScheduler } from "./jobs/feedIngestScheduler"
+import { processFeedIngestSource } from "./jobs/feedIngestSource"
 import { processLinkPreviewFetch } from "./jobs/linkPreviewFetch"
 import {
   processEsSyncComment,
@@ -62,6 +64,9 @@ function makeMediumWorker() {
       if (job.name === "recurring-post-scheduler") {
         await processRecurringPostScheduler(job.data as JobPayloadMap["recurring-post-scheduler"])
       }
+      if (job.name === "feed-ingest-scheduler") {
+        await processFeedIngestScheduler(job.data as JobPayloadMap["feed-ingest-scheduler"])
+      }
     },
     { connection, concurrency: 5, removeOnComplete: { age: 86400 } },
   )
@@ -86,6 +91,9 @@ function makeSlowWorker() {
       }
       if (job.name === "video-hls-encode") {
         await processVideoHlsEncode(job.data as JobPayloadMap["video-hls-encode"])
+      }
+      if (job.name === "feed-ingest-source") {
+        await processFeedIngestSource(job.data as JobPayloadMap["feed-ingest-source"])
       }
     },
     { connection, concurrency: 5, removeOnComplete: { age: 86400 } },

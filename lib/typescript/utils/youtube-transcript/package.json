@@ -1,0 +1,33 @@
+{
+  "name": "@utils/youtube-transcript",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vendored YouTube transcript fetcher — pulls caption tracks for a video id",
+  "keywords": [],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "compiled": "./build/index.js",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./*": {
+      "compiled": "./build/*.js",
+      "import": "./src/*.ts",
+      "require": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noCheck && tsc-alias -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsc-alias": "catalog:",
+    "typescript": "catalog:"
+  }
+}

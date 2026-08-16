@@ -310,6 +310,23 @@ export interface CustomFeedCommunity {
   customFeedId: string
 }
 
+export interface FeedItem {
+  createdAt: Generated<Timestamp>
+  id: string
+  itemKey: string
+  postId: string | null
+  sourceId: string
+}
+
+export interface FeedSourceState {
+  etag: string | null
+  lastError: string | null
+  lastFetchedAt: Timestamp | null
+  lastModified: string | null
+  lastStatus: string | null
+  sourceId: string
+}
+
 export interface InviteCode {
   code: string
   createdAt: Generated<Timestamp>
@@ -734,6 +751,8 @@ export interface DB {
   communityWidget: CommunityWidget
   customFeed: CustomFeed
   customFeedCommunity: CustomFeedCommunity
+  feedItem: FeedItem
+  feedSourceState: FeedSourceState
   inviteCode: InviteCode
   modAction: ModAction
   modmailConversation: ModmailConversation
