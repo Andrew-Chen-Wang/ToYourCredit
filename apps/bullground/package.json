@@ -12,16 +12,21 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noCheck && tsc-alias -p tsconfig.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "feeds:check": "tsx src/scripts/checkFeeds.ts",
+    "feeds:doc": "tsx src/scripts/generateFeedDoc.ts"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "catalog:",
     "@lib/dao": "workspace:*",
     "@template-nextjs/db": "workspace:*",
     "@template-nextjs/search": "workspace:*",
     "@utils/aws": "workspace:*",
     "@utils/queues": "workspace:*",
+    "@utils/youtube-transcript": "workspace:*",
     "bullmq": "catalog:",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "fast-xml-parser": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

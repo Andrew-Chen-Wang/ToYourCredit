@@ -16,6 +16,8 @@ export interface JobPayloadMap {
   "es-backfill": Record<string, never>
   "link-preview-fetch": { postId: string; linkUrl: string }
   "video-hls-encode": { postMediaId: string }
+  "feed-ingest-scheduler": Record<string, never>
+  "feed-ingest-source": { sourceId: string }
 }
 
 export type JobName = keyof JobPayloadMap
@@ -33,6 +35,8 @@ const jobQueues: { [K in JobName]: Queue } = {
   "es-backfill": slowQueue,
   "link-preview-fetch": slowQueue,
   "video-hls-encode": slowQueue,
+  "feed-ingest-scheduler": mediumQueue,
+  "feed-ingest-source": slowQueue,
 }
 
 export async function enqueue<K extends JobName>(
@@ -179,9 +183,33 @@ export async function enqueueVideoHlsEncode(postMediaId: string): Promise<void> 
   )
 }
 
+export function feedIngestSourceJobId(sourceId: string): string {
+  return `feed-ingest-source__${sourceId}`
+}
+
+/**
+ * One job per feed source. The deterministic jobId means a source whose previous fetch is still
+ * running is not enqueued twice; `delayMs` staggers the fan-out so ~120 sources do not all hit
+ * the network in the same second.
+ */
+export async function enqueueFeedIngestSource(sourceId: string, delayMs = 0): Promise<void> {
+  await enqueue(
+    "feed-ingest-source",
+    { sourceId },
+    {
+      jobId: feedIngestSourceJobId(sourceId),
+      delay: Math.max(0, delayMs),
+      removeOnComplete: true,
+      removeOnFail: 100,
+    },
+  )
+}
+
 const RISING_RECOMPUTE_INTERVAL_MS = 90 * 1000
 const RECURRING_POST_SCHEDULER_INTERVAL_MS = 15 * 60 * 1000
 const DRAFT_EXPIRY_INTERVAL_MS = 24 * 60 * 60 * 1000
+// Cron rather than `every` so runs land on :00 and :30 regardless of when the worker booted.
+const FEED_INGEST_CRON = "*/30 * * * *"
 
 // Registers all recurring schedulers. Idempotent — `upsertJobScheduler` reconciles the
 // schedule on every boot, so calling this on every worker start is safe.
@@ -200,5 +228,10 @@ export async function registerRepeatables(): Promise<void> {
     "draft-expiry",
     { every: DRAFT_EXPIRY_INTERVAL_MS },
     { name: "draft-expiry", data: {} },
+  )
+  await mediumQueue.upsertJobScheduler(
+    "feed-ingest-scheduler",
+    { pattern: FEED_INGEST_CRON },
+    { name: "feed-ingest-scheduler", data: {} },
   )
 }
