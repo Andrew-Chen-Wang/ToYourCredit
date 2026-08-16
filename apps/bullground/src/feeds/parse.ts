@@ -41,18 +41,80 @@ function text(value: unknown): string {
   return ""
 }
 
+// Feeds escape punctuation as numeric character references far more often than as named ones —
+// &#8217; for a right single quote is extremely common. An earlier version of this decoded only a
+// fixed list of named entities, so those references survived into post titles verbatim.
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: " ",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  lsquo: "‘",
+  rsquo: "’",
+  ldquo: "“",
+  rdquo: "”",
+  sbquo: "‚",
+  bdquo: "„",
+  laquo: "«",
+  raquo: "»",
+  bull: "•",
+  middot: "·",
+  deg: "°",
+  euro: "€",
+  pound: "£",
+  yen: "¥",
+  cent: "¢",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  times: "×",
+  frac12: "½",
+  prime: "′",
+  Prime: "″",
+  shy: "",
+  zwnj: "",
+  zwj: "",
+}
+
+function fromCodePoint(code: number): string | null {
+  // Reject out-of-range values and lone surrogates rather than letting String throw.
+  if (!Number.isFinite(code) || code <= 0 || code > 0x10ffff) return null
+  if (code >= 0xd800 && code <= 0xdfff) return null
+  return String.fromCodePoint(code)
+}
+
+/** Decodes HTML character references: hex, decimal, and the named ones feeds actually emit. */
+export function decodeEntities(input: string): string {
+  return (
+    input
+      .replace(
+        /&#x([0-9a-f]+);/gi,
+        (whole, hex: string) => fromCodePoint(parseInt(hex, 16)) ?? whole,
+      )
+      .replace(/&#(\d+);/g, (whole, dec: string) => fromCodePoint(parseInt(dec, 10)) ?? whole)
+      .replace(
+        /&([a-z][a-z0-9]*);/gi,
+        (whole, name: string) =>
+          NAMED_ENTITIES[name] ?? NAMED_ENTITIES[name.toLowerCase()] ?? whole,
+      )
+      // &amp; is decoded last so "&amp;#8217;" resolves to the literal text "&#8217;" rather than
+      // being double-decoded into a quote character.
+      .replace(/&amp;/gi, "&")
+  )
+}
+
 export function stripHtml(html: string): string {
   return (
-    html
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/&lt;/gi, "<")
-      .replace(/&gt;/gi, ">")
-      .replace(/&quot;/gi, '"')
-      .replace(/&#0?39;|&apos;/gi, "'")
+    decodeEntities(
+      html
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<[^>]+>/g, " "),
+    )
       .replace(/\s+/g, " ")
       // Tags become spaces, so "<b>rate</b>." would otherwise leave a gap before the full stop.
       .replace(/\s+([.,;:!?%)\]}])/g, "$1")

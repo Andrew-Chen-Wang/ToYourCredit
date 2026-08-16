@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseFeed, stripHtml } from "./parse"
+import { decodeEntities, parseFeed, stripHtml } from "./parse"
 
 const RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -65,6 +65,34 @@ const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-08-01</lastmod>
   </url>
 </urlset>`
+
+describe("decodeEntities", () => {
+  it("decodes decimal character references", () => {
+    // Regression: this shipped to production as a literal "&#8217;" inside a post title.
+    expect(decodeEntities("Austria&#8217;s dream of peace")).toBe("Austria’s dream of peace")
+  })
+
+  it("decodes hex character references", () => {
+    expect(decodeEntities("Austria&#x2019;s dream")).toBe("Austria’s dream")
+    expect(decodeEntities("&#X2019;")).toBe("’")
+  })
+
+  it("decodes the named entities feeds actually emit", () => {
+    expect(decodeEntities("a&hellip;b&mdash;c&nbsp;d&rsquo;e")).toBe("a…b—c d’e")
+  })
+
+  it("does not double-decode an escaped ampersand", () => {
+    // "&amp;#8217;" means the literal text "&#8217;", not a quote character.
+    expect(decodeEntities("AT&amp;T")).toBe("AT&T")
+    expect(decodeEntities("&amp;#8217;")).toBe("&#8217;")
+  })
+
+  it("leaves unknown or malformed references alone rather than mangling them", () => {
+    expect(decodeEntities("100&nosuchentity; and &#; and &#999999999;")).toBe(
+      "100&nosuchentity; and &#; and &#999999999;",
+    )
+  })
+})
 
 describe("stripHtml", () => {
   it("removes markup, scripts and entities", () => {
